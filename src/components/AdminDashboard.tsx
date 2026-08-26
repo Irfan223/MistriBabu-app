@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
-import { ArrowLeft, RefreshCw, Zap, Droplets, Phone, MapPin, Clock, Loader2, UserCheck, ClipboardList, ChevronDown, UserCircle } from "lucide-react";
+import { ArrowLeft, RefreshCw, Zap, Droplets, Phone, MapPin, Clock, Loader2, UserCheck, ClipboardList, ChevronDown, UserCircle, Search, LogOut, ShieldCheck } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/useToast";
 import Toast from "@/components/Toast";
 
 interface AdminDashboardProps {
+  email: string;
   onBack: () => void;
 }
 
@@ -39,9 +40,10 @@ interface Technician {
   created_at: string;
 }
 
-export default function AdminDashboard({ onBack }: AdminDashboardProps) {
+export default function AdminDashboard({ email, onBack }: AdminDashboardProps) {
   const [tab, setTab] = useState<"bookings" | "technicians">("bookings");
   const [statusFilter, setStatusFilter] = useState<BookingStatus>("ALL");
+  const [search, setSearch] = useState("");
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [loading, setLoading] = useState(true);
@@ -126,10 +128,28 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
     }
   };
 
+  const updateTechnician = async (id: number, updates: Partial<Pick<Technician, "is_verified" | "status">>) => {
+    setUpdatingId(id);
+    try {
+      const { error } = await supabase.from("technicians").update(updates).eq("id", id);
+      if (error) throw error;
+      setTechnicians((prev) => prev.map((tech) => tech.id === id ? { ...tech, ...updates } : tech));
+      showToast("success", "Technician profile updated.");
+    } catch (err) {
+      showToast("error", err instanceof Error ? err.message : "Failed to update technician");
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
   const filteredBookings =
     statusFilter === "ALL"
       ? bookings
       : bookings.filter((b) => b.status === statusFilter);
+  const visibleBookings = filteredBookings.filter((booking) => {
+    const query = search.trim().toLowerCase();
+    return !query || [booking.customer_name, booking.customer_phone, booking.locality].some((value) => value.toLowerCase().includes(query));
+  });
 
   const pendingCount = bookings.filter((b) => b.status === "PENDING").length;
   const assignedCount = bookings.filter((b) => b.status === "ASSIGNED").length;
@@ -140,36 +160,38 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
     <div className="min-h-screen bg-slate-100">
       <Toast toasts={toasts} onDismiss={dismiss} />
       <div className="sticky top-0 z-30 border-b border-slate-200 bg-white shadow-sm">
-        <div className="mx-auto max-w-5xl px-4 py-3 flex items-center justify-between">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
           <div className="flex items-center gap-3">
             <button
+              aria-label="Back to Site"
               onClick={onBack}
-              className="flex items-center gap-1.5 rounded-lg p-2 text-slate-600 transition hover:bg-slate-100"
+              className="flex shrink-0 items-center gap-1.5 rounded-lg p-2 text-slate-600 transition hover:bg-slate-100"
             >
-              <ArrowLeft className="h-5 w-5" />
+              <ArrowLeft className="h-5 w-5" /> <span className="hidden text-xs font-semibold sm:inline">Back to Site</span>
             </button>
-            <div>
-              <h1 className="text-lg font-extrabold text-slate-900">Admin Dashboard</h1>
-              <p className="text-xs text-slate-500">MistriBabu Lead Viewer</p>
+            <div className="min-w-0">
+              <h1 className="text-sm font-extrabold leading-tight text-slate-900 sm:text-lg">MistriBabu Lead &amp; Partner Management</h1>
+              <p className="hidden text-xs text-slate-500 sm:block">Secure operations console</p>
             </div>
           </div>
-          <button
-            onClick={fetchData}
-            disabled={loading}
-            className="flex items-center gap-1.5 rounded-lg bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-100 disabled:opacity-50"
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-            Refresh
-          </button>
+          <div className="flex items-center gap-2">
+            <span className="hidden items-center gap-1.5 rounded-full bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-600 md:flex"><ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />{email}</span>
+            <button onClick={fetchData} disabled={loading} className="flex items-center gap-1.5 rounded-lg bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-100 disabled:opacity-50">
+              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> <span className="hidden sm:inline">Refresh</span>
+            </button>
+            <button onClick={async () => { await supabase.auth.signOut(); onBack(); }} className="flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-700">
+              <LogOut className="h-4 w-4" /> <span className="hidden sm:inline">Sign Out</span>
+            </button>
+          </div>
         </div>
       </div>
 
       <div className="mx-auto max-w-5xl px-4 py-6">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <StatCard label="Total Leads" value={bookings.length} color="slate" />
           <StatCard label="Pending" value={pendingCount} color="amber" />
           <StatCard label="Assigned" value={assignedCount} color="blue" />
-          <StatCard label="Completed" value={completedCount} color="emerald" />
-          <StatCard label="Cancelled" value={cancelledCount} color="red" />
+          <StatCard label="Completed / Cancelled" value={completedCount + cancelledCount} color="emerald" />
         </div>
 
         <div className="flex gap-2 mb-5">
@@ -189,7 +211,8 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
           </div>
         ) : tab === "bookings" ? (
           <>
-            <div className="mb-4 flex flex-wrap gap-2">
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-wrap gap-2">
               {(["ALL", ...STATUS_OPTIONS] as BookingStatus[]).map((s) => (
                 <button
                   key={s}
@@ -203,13 +226,18 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                   {s}
                 </button>
               ))}
+              </div>
+              <div className="relative sm:w-72">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search name, phone, locality" className="form-input pl-9" />
+              </div>
             </div>
 
-            {filteredBookings.length === 0 ? (
+            {visibleBookings.length === 0 ? (
               <EmptyState message="No bookings found for this filter." />
             ) : (
               <div className="space-y-3">
-                {filteredBookings.map((b) => (
+                {visibleBookings.map((b) => (
                   <BookingCard
                     key={b.id}
                     booking={b}
@@ -227,7 +255,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
         ) : (
           <div className="space-y-3">
             {technicians.map((t) => (
-              <TechCard key={t.id} tech={t} />
+              <TechCard key={t.id} tech={t} updating={updatingId === t.id} onUpdate={updateTechnician} />
             ))}
           </div>
         )}
@@ -238,6 +266,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
 
 function StatCard({ label, value, color }: { label: string; value: number; color: string }) {
   const colorMap: Record<string, string> = {
+    slate: "bg-slate-50 text-slate-700 ring-slate-200",
     amber: "bg-amber-50 text-amber-700 ring-amber-200",
     blue: "bg-blue-50 text-blue-700 ring-blue-200",
     emerald: "bg-emerald-50 text-emerald-700 ring-emerald-200",
@@ -367,7 +396,7 @@ function BookingCard({
   );
 }
 
-function TechCard({ tech }: { tech: Technician }) {
+function TechCard({ tech, updating, onUpdate }: { tech: Technician; updating: boolean; onUpdate: (id: number, updates: Partial<Pick<Technician, "is_verified" | "status">>) => void }) {
   return (
     <div className="rounded-xl bg-white p-4 ring-1 ring-slate-200">
       <div className="flex items-start justify-between gap-3">
@@ -385,7 +414,7 @@ function TechCard({ tech }: { tech: Technician }) {
             )}
           </div>
           <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
-            <span className="flex items-center gap-1"><Phone className="h-3 w-3" />{tech.phone}</span>
+            <a href={`tel:${tech.phone}`} className="flex items-center gap-1 text-blue-600 hover:text-blue-800"><Phone className="h-3 w-3" />Call {tech.phone}</a>
             <span className="flex items-center gap-1 font-semibold text-blue-600">
               {tech.trade === "Electrician" ? <Zap className="h-3.5 w-3.5" /> : <Droplets className="h-3.5 w-3.5" />}
               {tech.trade}
@@ -399,6 +428,15 @@ function TechCard({ tech }: { tech: Technician }) {
             <p className="mt-1 text-xs text-slate-400">Aadhaar: ••••••{tech.aadhaar_number.slice(-4)}</p>
           )}
         </div>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2 border-t border-slate-100 pt-3">
+        <button disabled={updating} onClick={() => onUpdate(tech.id, { is_verified: !tech.is_verified })} className={`rounded-lg px-3 py-2 text-xs font-bold transition disabled:opacity-50 ${tech.is_verified ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100" : "bg-amber-50 text-amber-700 hover:bg-amber-100"}`}>
+          {tech.is_verified ? "Mark Unverified" : "Verify Mistri"}
+        </button>
+        <button disabled={updating} onClick={() => onUpdate(tech.id, { status: tech.status === "ACTIVE" ? "INACTIVE" : "ACTIVE" })} className="rounded-lg bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-200 disabled:opacity-50">
+          {tech.status === "ACTIVE" ? "Set Inactive" : "Set Active"}
+        </button>
+        <span className={`ml-auto self-center text-[10px] font-bold uppercase tracking-wide ${tech.status === "ACTIVE" ? "text-emerald-600" : "text-slate-400"}`}>{tech.status}</span>
       </div>
     </div>
   );

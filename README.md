@@ -30,3 +30,11 @@ If you are developing a production application, we recommend enabling type-aware
 ```
 
 See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+
+## Admin portal setup
+
+1. Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` to `.env`.
+2. Create the first admin in Supabase Auth, then insert the same user UUID and email into `admin_users`.
+3. Run [`supabase/admin_security.sql`](supabase/admin_security.sql) in the Supabase SQL editor to enable the admin policies and protect booking and technician updates.
+
+The admin portal is available from the site footer. Admin access requires both a valid Supabase Auth account and a matching row in `admin_users`.
