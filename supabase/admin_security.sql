@@ -45,7 +45,7 @@ with check (public.is_admin());
 create policy "Anyone can register as a technician"
 on public.technicians for insert
 to anon, authenticated
-with check (is_verified = false and status in ('ACTIVE', 'PENDING'));
+with check (is_verified = false and status in ('ACTIVE', 'PENDING', 'PENDING_VERIFICATION'));
 
 create policy "Admins can view technicians"
 on public.technicians for select

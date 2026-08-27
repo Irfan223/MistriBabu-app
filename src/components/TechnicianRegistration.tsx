@@ -4,6 +4,7 @@ import { siteConfig } from "@/config/siteConfig";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/useToast";
 import Toast from "@/components/Toast";
+import { isMuzaffarpurPincode, PINCODE_SERVICE_ERROR } from "@/utils/pincodeValidator";
 
 interface TechnicianRegistrationProps {
   open: boolean;
@@ -16,6 +17,7 @@ interface TechForm {
   trade: string;
   experience_years: string;
   operating_areas: string;
+  operating_pincode: string;
   aadhaar_number: string;
 }
 
@@ -25,6 +27,7 @@ const emptyTech: TechForm = {
   trade: "Electrician",
   experience_years: "",
   operating_areas: "",
+  operating_pincode: "",
   aadhaar_number: "",
 };
 
@@ -83,13 +86,14 @@ export default function TechnicianRegistration({
     } else if (isNaN(Number(form.experience_years)) || Number(form.experience_years) < 0) {
       e.experience_years = "Enter a valid number of years";
     }
-    if (!form.operating_areas.trim()) e.operating_areas = "Select at least one area";
+    if (!form.operating_areas.trim()) e.operating_areas = "Enter your operating areas";
+    if (!isMuzaffarpurPincode(form.operating_pincode)) e.operating_pincode = PINCODE_SERVICE_ERROR;
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
   const buildWhatsAppUrl = (f: TechForm) => {
-    const text = `Hi MistriBabu, I want to join as a technician:\n• *Name:* ${f.full_name}\n• *Trade:* ${f.trade}\n• *Phone:* ${f.phone}\n• *Experience:* ${f.experience_years} years\n• *Areas:* ${f.operating_areas}`;
+    const text = `Hi MistriBabu, I want to join as a technician:\n• *Name:* ${f.full_name}\n• *Trade:* ${f.trade}\n• *Phone:* ${f.phone}\n• *Experience:* ${f.experience_years} years\n• *Areas:* ${f.operating_areas}\n• *PIN:* ${f.operating_pincode}`;
     return `https://wa.me/${siteConfig.whatsappNumber}?text=${encodeURIComponent(text)}`;
   };
 
@@ -105,10 +109,10 @@ export default function TechnicianRegistration({
         phone: form.phone.trim(),
         trade: form.trade,
         experience_years: Number(form.experience_years),
-        operating_areas: form.operating_areas.trim(),
+        operating_areas: `${form.operating_areas.trim()}, PIN: ${form.operating_pincode}`,
         aadhaar_number: form.aadhaar_number.trim() || null,
         is_verified: false,
-        status: "ACTIVE",
+        status: "PENDING_VERIFICATION",
       });
 
       if (error) throw error;
@@ -242,18 +246,30 @@ export default function TechnicianRegistration({
               icon={<MapPin className="h-4 w-4" />}
               error={errors.operating_areas}
             >
-              <select
+              <input
+                type="text"
                 value={form.operating_areas}
                 onChange={(e) => handleChange("operating_areas", e.target.value)}
+                placeholder="e.g. Mithanpura, Ahiyapur"
                 className="form-input"
-              >
-                <option value="">Select your main area</option>
-                {siteConfig.localities.map((loc) => (
-                  <option key={loc} value={loc}>
-                    {loc}
-                  </option>
-                ))}
-              </select>
+              />
+            </Field>
+
+            <Field label="Serviceable PIN Code" error={errors.operating_pincode}>
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                value={form.operating_pincode}
+                onChange={(e) => handleChange("operating_pincode", e.target.value.replace(/\D/g, ""))}
+                placeholder="6-digit Muzaffarpur PIN code"
+                className="form-input"
+              />
+              {/^\d{6}$/.test(form.operating_pincode) && (
+                <div className={`mt-2 rounded-lg px-3 py-2 text-xs font-semibold ring-1 ${isMuzaffarpurPincode(form.operating_pincode) ? "bg-emerald-50 text-emerald-700 ring-emerald-200" : "bg-red-50 text-red-700 ring-red-200"}`}>
+                  {isMuzaffarpurPincode(form.operating_pincode) ? "✓ Serviceable in Muzaffarpur" : "Not serviceable in this area yet"}
+                </div>
+              )}
             </Field>
 
             <Field label="Aadhaar Number (optional)" icon={<BadgeCheck className="h-4 w-4" />}>
@@ -270,7 +286,7 @@ export default function TechnicianRegistration({
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !isMuzaffarpurPincode(form.operating_pincode)}
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-6 py-3.5 text-base font-bold text-white shadow-lg transition hover:bg-emerald-500 active:scale-95 disabled:opacity-70"
             >
               {loading ? (

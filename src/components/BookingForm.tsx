@@ -1,6 +1,7 @@
 import { useState, useEffect, forwardRef } from "react";
 import { Loader2, CheckCircle2, Calendar, Phone, User, MapPin, Zap, Droplets, AlertCircle } from "lucide-react";
 import { siteConfig } from "@/config/siteConfig";
+import { isMuzaffarpurPincode, PINCODE_SERVICE_ERROR } from "@/utils/pincodeValidator";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/useToast";
 import Toast from "@/components/Toast";
@@ -14,6 +15,8 @@ interface BookingFormProps {
 interface FormState {
   customer_name: string;
   customer_phone: string;
+  address: string;
+  pincode: string;
   locality: string;
   service_category: string;
   sub_service: string;
@@ -24,6 +27,8 @@ interface FormState {
 const emptyForm: FormState = {
   customer_name: "",
   customer_phone: "",
+  address: "",
+  pincode: "",
   locality: "",
   service_category: "Electrician",
   sub_service: "",
@@ -69,7 +74,8 @@ const BookingForm = forwardRef<HTMLDivElement, BookingFormProps>(
       if (!form.customer_name.trim()) e.customer_name = "Please enter your name";
       const phoneCheck = validatePhone(form.customer_phone);
       if (!phoneCheck.valid) e.customer_phone = phoneCheck.error!;
-      if (!form.locality) e.locality = "Select your locality";
+      if (!form.address.trim()) e.address = "Enter your street address or landmark";
+      if (!isMuzaffarpurPincode(form.pincode)) e.pincode = PINCODE_SERVICE_ERROR;
       if (!form.service_category) e.service_category = "Select a service";
       if (!form.sub_service.trim()) e.sub_service = "Describe the service needed";
       if (!form.preferred_slot) e.preferred_slot = "Choose a slot";
@@ -93,7 +99,8 @@ const BookingForm = forwardRef<HTMLDivElement, BookingFormProps>(
     };
 
     const buildWhatsAppUrl = (f: FormState) => {
-      const text = `Hi MistriBabu! I want to book a service:\n• *Service:* ${f.service_category} - ${f.sub_service}\n• *Name:* ${f.customer_name}\n• *Phone:* ${f.customer_phone}\n• *Locality:* ${f.locality}\n• *Slot:* ${f.preferred_slot}\n• *Issue:* ${f.problem_description || "—"}`;
+      const formattedAddress = `${f.address.trim()}, PIN: ${f.pincode}`;
+      const text = `Hi MistriBabu! I want to book a service:\n• *Service:* ${f.service_category} - ${f.sub_service}\n• *Name:* ${f.customer_name}\n• *Phone:* ${f.customer_phone}\n• *Address:* ${formattedAddress}\n• *Slot:* ${f.preferred_slot}\n• *Issue:* ${f.problem_description || "—"}`;
       return `https://wa.me/${siteConfig.whatsappNumber}?text=${encodeURIComponent(text)}`;
     };
 
@@ -109,7 +116,7 @@ const BookingForm = forwardRef<HTMLDivElement, BookingFormProps>(
           .insert({
             customer_name: form.customer_name.trim(),
             customer_phone: form.customer_phone.trim(),
-            locality: form.locality,
+            locality: `${form.address.trim()}, PIN: ${form.pincode}`,
             service_category: form.service_category,
             sub_service: form.sub_service.trim(),
             problem_description: form.problem_description.trim() || null,
@@ -139,6 +146,8 @@ const BookingForm = forwardRef<HTMLDivElement, BookingFormProps>(
 
     const phoneHelper = helpers.customer_phone ?? "10-digit Indian mobile number";
     const phoneValid = /^[6-9]\d{9}$/.test(form.customer_phone.trim());
+    const pincodeComplete = /^\d{6}$/.test(form.pincode);
+    const pincodeValid = isMuzaffarpurPincode(form.pincode);
 
     return (
       <section id="booking" ref={ref} className="scroll-mt-20 bg-white py-12 sm:py-16">
@@ -195,19 +204,32 @@ const BookingForm = forwardRef<HTMLDivElement, BookingFormProps>(
               />
             </Field>
 
-            <Field label="Locality" icon={<MapPin className="h-4 w-4" />} error={errors.locality}>
-              <select
-                value={form.locality}
-                onChange={(e) => handleChange("locality", e.target.value)}
+            <Field label="Street Address / Locality / Landmark" icon={<MapPin className="h-4 w-4" />} error={errors.address}>
+              <input
+                type="text"
+                value={form.address}
+                onChange={(e) => handleChange("address", e.target.value)}
+                placeholder="e.g. Flat 201, Mithanpura Chowk"
                 className="form-input"
-              >
-                <option value="">Select your area in {siteConfig.city}</option>
-                {siteConfig.localities.map((loc) => (
-                  <option key={loc} value={loc}>
-                    {loc}
-                  </option>
-                ))}
-              </select>
+              />
+            </Field>
+
+            <Field label="PIN Code" error={errors.pincode}>
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                value={form.pincode}
+                onChange={(e) => handleChange("pincode", e.target.value.replace(/\D/g, ""))}
+                placeholder="6-digit PIN code"
+                className="form-input"
+                aria-describedby="pincode-status"
+              />
+              {pincodeComplete && (
+                <div id="pincode-status" className={`mt-2 rounded-lg px-3 py-2 text-xs font-semibold ring-1 ${pincodeValid ? "bg-emerald-50 text-emerald-700 ring-emerald-200" : "bg-red-50 text-red-700 ring-red-200"}`}>
+                  {pincodeValid ? "✓ Serviceable in Muzaffarpur" : "Not serviceable in this area yet"}
+                </div>
+              )}
             </Field>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -263,7 +285,7 @@ const BookingForm = forwardRef<HTMLDivElement, BookingFormProps>(
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !pincodeValid}
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-6 py-3.5 text-base font-bold text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-500 active:scale-95 disabled:cursor-not-allowed disabled:opacity-70"
             >
               {loading ? (

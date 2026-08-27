@@ -74,7 +74,7 @@ export default function AdminDashboard({ email, onBack }: AdminDashboardProps) {
     fetchData();
   }, [fetchData]);
 
-  const activeTechnicians = technicians.filter((t) => t.status === "ACTIVE");
+  const activeTechnicians = technicians.filter((t) => t.status === "ACTIVE" && t.is_verified);
 
   const updateStatus = async (id: number, status: string) => {
     setUpdatingId(id);
@@ -141,6 +141,11 @@ export default function AdminDashboard({ email, onBack }: AdminDashboardProps) {
       setUpdatingId(null);
     }
   };
+
+  const verifyTechnician = (tech: Technician) => updateTechnician(tech.id, {
+    is_verified: !tech.is_verified,
+    status: tech.is_verified ? "PENDING_VERIFICATION" : "ACTIVE",
+  });
 
   const filteredBookings =
     statusFilter === "ALL"
@@ -255,7 +260,7 @@ export default function AdminDashboard({ email, onBack }: AdminDashboardProps) {
         ) : (
           <div className="space-y-3">
             {technicians.map((t) => (
-              <TechCard key={t.id} tech={t} updating={updatingId === t.id} onUpdate={updateTechnician} />
+              <TechCard key={t.id} tech={t} updating={updatingId === t.id} onUpdate={updateTechnician} onVerify={verifyTechnician} />
             ))}
           </div>
         )}
@@ -396,7 +401,7 @@ function BookingCard({
   );
 }
 
-function TechCard({ tech, updating, onUpdate }: { tech: Technician; updating: boolean; onUpdate: (id: number, updates: Partial<Pick<Technician, "is_verified" | "status">>) => void }) {
+function TechCard({ tech, updating, onUpdate, onVerify }: { tech: Technician; updating: boolean; onUpdate: (id: number, updates: Partial<Pick<Technician, "is_verified" | "status">>) => void; onVerify: (tech: Technician) => void }) {
   return (
     <div className="rounded-xl bg-white p-4 ring-1 ring-slate-200">
       <div className="flex items-start justify-between gap-3">
@@ -409,7 +414,7 @@ function TechCard({ tech, updating, onUpdate }: { tech: Technician; updating: bo
               </span>
             ) : (
               <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">
-                Unverified
+                Unverified / Pending Action
               </span>
             )}
           </div>
@@ -430,8 +435,8 @@ function TechCard({ tech, updating, onUpdate }: { tech: Technician; updating: bo
         </div>
       </div>
       <div className="mt-3 flex flex-wrap gap-2 border-t border-slate-100 pt-3">
-        <button disabled={updating} onClick={() => onUpdate(tech.id, { is_verified: !tech.is_verified })} className={`rounded-lg px-3 py-2 text-xs font-bold transition disabled:opacity-50 ${tech.is_verified ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100" : "bg-amber-50 text-amber-700 hover:bg-amber-100"}`}>
-          {tech.is_verified ? "Mark Unverified" : "Verify Mistri"}
+        <button disabled={updating} onClick={() => onVerify(tech)} className={`rounded-lg px-3 py-2 text-xs font-bold transition disabled:opacity-50 ${tech.is_verified ? "bg-amber-50 text-amber-700 hover:bg-amber-100" : "bg-emerald-600 text-white hover:bg-emerald-700"}`}>
+          {tech.is_verified ? "Revoke Verification" : "Verify Mistri"}
         </button>
         <button disabled={updating} onClick={() => onUpdate(tech.id, { status: tech.status === "ACTIVE" ? "INACTIVE" : "ACTIVE" })} className="rounded-lg bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-200 disabled:opacity-50">
           {tech.status === "ACTIVE" ? "Set Inactive" : "Set Active"}
