@@ -1,5 +1,4 @@
 import { supabase } from "@/lib/supabase";
-import { getPincodeMeta } from "@/data/triDistrictZones";
 
 export type ServiceAvailabilityStatus =
   | "OUT_OF_SERVICE_REGION"
@@ -8,9 +7,12 @@ export type ServiceAvailabilityStatus =
   | "INTER_DISTRICT_FALLBACK"
   | "NO_TECHNICIAN_AVAILABLE";
 
+export type Trade = "Electrician" | "Plumber" | "AC" | "Painter";
+export type SupportedDistrict = "Muzaffarpur" | "Sitamarhi" | "Sheohar" | "Motihari";
+
 export interface ServiceAvailability {
   status: ServiceAvailabilityStatus;
-  district: "Muzaffarpur" | "Sitamarhi" | "Sheohar" | null;
+  district: SupportedDistrict | null;
   hubName: string | null;
   eta: string | null;
   message: string;
@@ -20,101 +22,90 @@ export interface ServiceAvailability {
   nearestPincode: string | null;
   nearestTechnicianCount: number;
 }
-
 const OUTSIDE_REGION_MESSAGE =
-  "We currently do not offer on-demand service outside Muzaffarpur, Sitamarhi, and Sheohar districts.";
-
-export type Trade = "Electrician" | "Plumber" | "AC" | "Painter";
-
-async function getAvailabilityCounts(pincode: string, trade?: Trade) {
-  const { data, error } = await supabase.rpc("get_service_availability_counts", {
-    target_pincode: pincode,
-    target_trade: trade ?? null,
-  });
-  if (error) throw error;
-  return (data?.[0] ?? { exact_count: 0, district_count: 0, neighboring_count: 0, nearest_pincode: null, nearest_count: 0 }) as {
-    exact_count: number;
-    district_count: number;
-    neighboring_count: number;
-    nearest_pincode: string | null;
-    nearest_count: number;
-  };
-}
+  "We currently do not offer on-demand service outside Muzaffarpur, Sitamarhi, Sheohar, and Motihari districts.";
 
 export async function checkServiceAvailability(targetPincode: string, trade?: Trade): Promise<ServiceAvailability> {
   const pincode = targetPincode.trim();
-  const location = getPincodeMeta(pincode);
-  if (!location) {
-    return {
-      status: "OUT_OF_SERVICE_REGION",
-      district: null,
-      hubName: null,
-      eta: null,
-      message: OUTSIDE_REGION_MESSAGE,
-      canBook: false,
-      technicianCount: 0,
-      exactTechnicianCount: 0,
-      nearestPincode: null,
-      nearestTechnicianCount: 0,
-    };
-  }
+  if (!/^\d{6}$/.test(pincode)) return unavailable();
 
-  const counts = await getAvailabilityCounts(pincode, trade);
-  if (counts.exact_count > 0) {
-    return {
-      status: "EXACT_PIN_MATCH",
-      district: location.district,
-      hubName: location.meta.hubName,
-      eta: "45–60 mins",
-      message: "Technician available in your immediate locality!",
-      canBook: true,
-      technicianCount: counts.exact_count,
-      exactTechnicianCount: counts.exact_count,
-      nearestPincode: null,
-      nearestTechnicianCount: counts.exact_count,
-    };
-  }
+  const { data: serviceable, error: serviceableError } = await supabase
+    .from("serviceable_pincodes")
+    .select("pincode")
+    .eq("pincode", pincode)
+    .eq("enabled", true)
+    .maybeSingle();
+  if (serviceableError) throw serviceableError;
+  if (!serviceable) return unavailable();
 
-  if (counts.district_count > 0) {
-    return {
-      status: "SAME_DISTRICT_MATCH",
-      district: location.district,
-      hubName: location.meta.hubName,
-      eta: "2–3 hours (Extended Transit)",
-      message: `No technician stationed directly at your PIN code, but verified experts from within ${location.district} can arrive with extended travel time.`,
-      canBook: true,
-      technicianCount: counts.district_count,
-      exactTechnicianCount: counts.exact_count,
-      nearestPincode: counts.nearest_pincode,
-      nearestTechnicianCount: counts.nearest_count,
-    };
-  }
+  const { data: postal, error: postalError } = await supabase
+    .from("postal_pincodes")
+    .select("pincode, district")
+    .eq("pincode", pincode)
+    .maybeSingle();
+  if (postalError) throw postalError;
+  if (!postal) return unavailable();
 
-  if (counts.neighboring_count > 0) {
-    return {
-      status: "INTER_DISTRICT_FALLBACK",
-      district: location.district,
-      hubName: location.meta.hubName,
-      eta: "Same-Day / Next-Day Scheduled (No Immediate Dispatch)",
-      message: "Technicians dispatching from neighboring district. Immediate 60-min resolution cannot be guaranteed.",
-      canBook: true,
-      technicianCount: counts.neighboring_count,
-      exactTechnicianCount: counts.exact_count,
-      nearestPincode: counts.nearest_pincode,
-      nearestTechnicianCount: counts.nearest_count,
-    };
-  }
+  const district = postal.district as SupportedDistrict;
+  const { data: offices, error: officesError } = await supabase
+    .from("post_offices")
+    .select("name, block")
+    .eq("pincode", pincode)
+    .order("name")
+    .limit(1);
+  if (officesError) throw officesError;
+  const locationName = offices?.[0]?.block ?? offices?.[0]?.name ?? null;
 
+  const { data: technicians, error: techniciansError } = await supabase
+    .from("technicians")
+    .select("service_pincode, service_district, is_active, is_online, is_verified, status")
+    .eq("is_active", true)
+    .eq("is_online", true)
+    .eq("is_verified", true)
+    .eq("status", "ACTIVE")
+    .eq("trade", trade ?? "Electrician");
+  if (techniciansError) throw techniciansError;
+
+  const available = technicians ?? [];
+  const exactTechnicianCount = available.filter((technician) => technician.service_pincode === pincode).length;
+  const districtTechnicianCount = available.filter((technician) => technician.service_district === district).length;
+  const neighboringTechnicianCount = available.filter((technician) => technician.service_district !== district).length;
+
+  if (exactTechnicianCount > 0) {
+    return result("EXACT_PIN_MATCH", district, locationName, "45–60 mins", "Technician available in your immediate locality!", true, exactTechnicianCount, exactTechnicianCount);
+  }
+  if (districtTechnicianCount > 0) {
+    return result("SAME_DISTRICT_MATCH", district, locationName, "2–3 hours (Extended Transit)", `No technician stationed directly at PIN ${pincode}, but a verified ${trade ?? "service"} expert is available in ${district}.`, true, districtTechnicianCount, 0);
+  }
+  if (neighboringTechnicianCount > 0) {
+    return result("INTER_DISTRICT_FALLBACK", district, locationName, "Same-Day / Next-Day Scheduled", "Technicians are available from a neighboring district. Immediate dispatch cannot be guaranteed.", true, neighboringTechnicianCount, 0);
+  }
+  return result("NO_TECHNICIAN_AVAILABLE", district, locationName, null, "No verified technician is currently available for this PIN code.", false, 0, 0);
+}
+function unavailable(): ServiceAvailability {
+  return result("OUT_OF_SERVICE_REGION", null, null, null, OUTSIDE_REGION_MESSAGE, false, 0, 0);
+}
+
+function result(
+  status: ServiceAvailabilityStatus,
+  district: SupportedDistrict | null,
+  hubName: string | null,
+  eta: string | null,
+  message: string,
+  canBook: boolean,
+  technicianCount: number,
+  exactTechnicianCount: number,
+): ServiceAvailability {
   return {
-    status: "NO_TECHNICIAN_AVAILABLE",
-    district: location.district,
-    hubName: location.meta.hubName,
-    eta: null,
-    message: "No verified technician is currently available for this PIN code.",
-    canBook: false,
-    technicianCount: 0,
-    exactTechnicianCount: counts.exact_count,
-    nearestPincode: counts.nearest_pincode,
-    nearestTechnicianCount: counts.nearest_count,
+    status,
+    district,
+    hubName,
+    eta,
+    message,
+    canBook,
+    technicianCount,
+    exactTechnicianCount,
+    nearestPincode: null,
+    nearestTechnicianCount: 0,
   };
 }

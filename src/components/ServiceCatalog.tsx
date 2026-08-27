@@ -24,7 +24,7 @@ export default function ServiceCatalog({ onBookService }: ServiceCatalogProps) {
         </div>
 
         <div className="mt-8 flex justify-center">
-          <div className="grid w-full max-w-sm grid-cols-2 gap-1 rounded-xl bg-slate-200 p-1 sm:flex sm:max-w-none">
+          <div className="inline-flex max-w-full items-center gap-1.5 rounded-2xl bg-[#E7ECF3] p-1.5 overflow-x-auto no-scrollbar shadow-inner">
             <TabButton
               active={activeTab === "Electrician"}
               onClick={() => setActiveTab("Electrician")}
@@ -106,15 +106,18 @@ function TabButton({
 }) {
   return (
     <button
+      type="button"
       onClick={onClick}
-      className={`flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-semibold transition sm:px-5 ${
+      className={`flex items-center justify-center gap-2 whitespace-nowrap rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-150 ${
         active
-          ? "bg-white text-blue-700 shadow-sm"
-          : "text-slate-500 hover:text-slate-700"
+          ? "bg-white text-[#2563EB] shadow-sm"
+          : "text-slate-600 hover:text-slate-900 hover:bg-white/40"
       }`}
     >
-      {icon}
-      {label}
+      <span className={active ? "text-[#2563EB]" : "text-slate-500"}>
+        {icon}
+      </span>
+      <span>{label}</span>
     </button>
   );
 }
