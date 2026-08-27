@@ -186,7 +186,7 @@ export default function AdminDashboard({ email, onBack }: AdminDashboardProps) {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className="hidden items-center gap-1.5 rounded-full bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-600 md:flex"><ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />{email}</span>
+            <span className="hidden items-center gap-1.5 rounded-full bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-600 md:flex"><ShieldCheck className="h-3.5 w-3.5 text-orange-600" />{email}</span>
             <button onClick={fetchData} disabled={loading} className="flex items-center gap-1.5 rounded-lg bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-100 disabled:opacity-50">
               <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> <span className="hidden sm:inline">Refresh</span>
             </button>
@@ -202,7 +202,7 @@ export default function AdminDashboard({ email, onBack }: AdminDashboardProps) {
           <StatCard label="Total Leads" value={bookings.length} color="slate" />
           <StatCard label="Pending" value={pendingCount} color="amber" />
           <StatCard label="Assigned" value={assignedCount} color="blue" />
-          <StatCard label="Completed / Cancelled" value={completedCount + cancelledCount} color="emerald" />
+          <StatCard label="Completed / Cancelled" value={completedCount + cancelledCount} color="orange" />
         </div>
 
         <div className="flex gap-2 mb-5">
@@ -288,7 +288,7 @@ function StatCard({ label, value, color }: { label: string; value: number; color
     slate: "bg-slate-50 text-slate-700 ring-slate-200",
     amber: "bg-amber-50 text-amber-700 ring-amber-200",
     blue: "bg-blue-50 text-blue-700 ring-blue-200",
-    emerald: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+    orange: "bg-orange-50 text-orange-700 ring-orange-200",
     red: "bg-red-50 text-red-700 ring-red-200",
   };
   return (
@@ -345,7 +345,7 @@ function BookingCard({
   const statusColor: Record<string, string> = {
     PENDING: "bg-amber-100 text-amber-700",
     ASSIGNED: "bg-blue-100 text-blue-700",
-    COMPLETED: "bg-emerald-100 text-emerald-700",
+    COMPLETED: "bg-orange-100 text-orange-700",
     CANCELLED: "bg-red-100 text-red-700",
   };
 
@@ -441,7 +441,7 @@ function TechCard({ tech, updating, onUpdate, onVerify }: { tech: Technician; up
           <div className="flex items-center gap-2">
             <p className="text-sm font-bold text-slate-900">{tech.full_name}</p>
             {tech.is_verified ? (
-              <span className="flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+              <span className="flex items-center gap-1 rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-bold text-orange-700">
                 <UserCheck className="h-3 w-3" /> Verified
               </span>
             ) : (
@@ -467,13 +467,13 @@ function TechCard({ tech, updating, onUpdate, onVerify }: { tech: Technician; up
         </div>
       </div>
       <div className="mt-3 flex flex-wrap gap-2 border-t border-slate-100 pt-3">
-        <button disabled={updating} onClick={() => onVerify(tech)} className={`rounded-lg px-3 py-2 text-xs font-bold transition disabled:opacity-50 ${tech.is_verified ? "bg-amber-50 text-amber-700 hover:bg-amber-100" : "bg-emerald-600 text-white hover:bg-emerald-700"}`}>
+        <button disabled={updating} onClick={() => onVerify(tech)} className={`rounded-lg px-3 py-2 text-xs font-bold transition disabled:opacity-50 ${tech.is_verified ? "bg-amber-50 text-amber-700 hover:bg-amber-100" : "bg-orange-600 text-white hover:bg-orange-700"}`}>
           {tech.is_verified ? "Revoke Verification" : "Verify Expert"}
         </button>
         <button disabled={updating} onClick={() => onUpdate(tech.id, { status: tech.status === "ACTIVE" ? "INACTIVE" : "ACTIVE" })} className="rounded-lg bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-200 disabled:opacity-50">
           {tech.status === "ACTIVE" ? "Set Inactive" : "Set Active"}
         </button>
-        <span className={`ml-auto self-center text-[10px] font-bold uppercase tracking-wide ${tech.status === "ACTIVE" ? "text-emerald-600" : "text-slate-400"}`}>{tech.status}</span>
+        <span className={`ml-auto self-center text-[10px] font-bold uppercase tracking-wide ${tech.status === "ACTIVE" ? "text-orange-600" : "text-slate-400"}`}>{tech.status}</span>
       </div>
     </div>
   );

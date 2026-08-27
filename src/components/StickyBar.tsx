@@ -20,7 +20,7 @@ export default function StickyBar() {
           href={waLink}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex flex-1 items-center justify-center gap-2 bg-emerald-600 py-3.5 text-sm font-bold text-white active:bg-emerald-700"
+          className="flex flex-1 items-center justify-center gap-2 bg-orange-600 py-3.5 text-sm font-bold text-white active:bg-orange-700"
         >
           <MessageCircle className="h-5 w-5" />
           WhatsApp Book

@@ -164,8 +164,8 @@ export default function TechnicianRegistration({
 
         {success ? (
           <div className="mt-6 flex flex-col items-center text-center py-6">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100">
-              <CheckCircle2 className="h-8 w-8 text-emerald-600" />
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-orange-100">
+              <CheckCircle2 className="h-8 w-8 text-orange-600" />
             </div>
             <h4 className="mt-4 text-lg font-bold text-slate-900">
               Registration Received!
@@ -291,7 +291,7 @@ export default function TechnicianRegistration({
             <button
               type="submit"
               disabled={loading || form.selected_pincodes.length === 0}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-6 py-3.5 text-base font-bold text-white shadow-lg transition hover:bg-emerald-500 active:scale-95 disabled:opacity-70"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-orange-600 px-6 py-3.5 text-base font-bold text-white shadow-lg transition hover:bg-orange-500 active:scale-95 disabled:opacity-70"
             >
               {loading ? (
                 <>
@@ -334,7 +334,7 @@ function Field({
       {error ? (
         <p className="mt-1 text-xs font-medium text-red-600">{error}</p>
       ) : helper ? (
-        <p className={`mt-1 text-xs ${helperValid ? "text-emerald-600" : "text-slate-400"}`}>
+        <p className={`mt-1 text-xs ${helperValid ? "text-orange-600" : "text-slate-400"}`}>
           {helper}
         </p>
       ) : null}
