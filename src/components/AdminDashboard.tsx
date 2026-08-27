@@ -3,6 +3,7 @@ import { ArrowLeft, RefreshCw, Zap, Droplets, Phone, MapPin, Clock, Loader2, Use
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/useToast";
 import Toast from "@/components/Toast";
+import { getPincodeMeta, TRI_DISTRICT_DATA } from "@/data/triDistrictZones";
 
 interface AdminDashboardProps {
   email: string;
@@ -10,6 +11,7 @@ interface AdminDashboardProps {
 }
 
 type BookingStatus = "ALL" | "PENDING" | "ASSIGNED" | "COMPLETED" | "CANCELLED";
+type DistrictFilter = "All" | "Muzaffarpur" | "Sitamarhi" | "Sheohar";
 
 const STATUS_OPTIONS = ["PENDING", "ASSIGNED", "COMPLETED", "CANCELLED"] as const;
 
@@ -44,6 +46,7 @@ export default function AdminDashboard({ email, onBack }: AdminDashboardProps) {
   const [tab, setTab] = useState<"bookings" | "technicians">("bookings");
   const [statusFilter, setStatusFilter] = useState<BookingStatus>("ALL");
   const [search, setSearch] = useState("");
+  const [districtFilter, setDistrictFilter] = useState<DistrictFilter>("All");
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [loading, setLoading] = useState(true);
@@ -151,7 +154,8 @@ export default function AdminDashboard({ email, onBack }: AdminDashboardProps) {
     statusFilter === "ALL"
       ? bookings
       : bookings.filter((b) => b.status === statusFilter);
-  const visibleBookings = filteredBookings.filter((booking) => {
+  const districtBookings = filteredBookings.filter((booking) => districtFilter === "All" || getPincodeMeta(extractPincode(booking.locality))?.district === districtFilter);
+  const visibleBookings = districtBookings.filter((booking) => {
     const query = search.trim().toLowerCase();
     return !query || [booking.customer_name, booking.customer_phone, booking.locality].some((value) => value.toLowerCase().includes(query));
   });
@@ -160,6 +164,7 @@ export default function AdminDashboard({ email, onBack }: AdminDashboardProps) {
   const assignedCount = bookings.filter((b) => b.status === "ASSIGNED").length;
   const completedCount = bookings.filter((b) => b.status === "COMPLETED").length;
   const cancelledCount = bookings.filter((b) => b.status === "CANCELLED").length;
+  const visibleTechnicians = technicians.filter((tech) => districtFilter === "All" || getTechnicianDistrict(tech) === districtFilter);
 
   return (
     <div className="min-h-screen bg-slate-100">
@@ -202,6 +207,14 @@ export default function AdminDashboard({ email, onBack }: AdminDashboardProps) {
         <div className="flex gap-2 mb-5">
           <TabBtn active={tab === "bookings"} onClick={() => setTab("bookings")} icon={<ClipboardList className="h-4 w-4" />} label={`Bookings (${bookings.length})`} />
           <TabBtn active={tab === "technicians"} onClick={() => setTab("technicians")} icon={<UserCheck className="h-4 w-4" />} label={`Technicians (${technicians.length})`} />
+        </div>
+
+        <div className="mb-5 flex flex-wrap gap-2">
+          {(["All", ...Object.keys(TRI_DISTRICT_DATA)] as DistrictFilter[]).map((district) => (
+            <button key={district} onClick={() => setDistrictFilter(district)} className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${districtFilter === district ? "bg-blue-600 text-white" : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"}`}>
+              {district}
+            </button>
+          ))}
         </div>
 
         {error && (
@@ -255,11 +268,11 @@ export default function AdminDashboard({ email, onBack }: AdminDashboardProps) {
               </div>
             )}
           </>
-        ) : technicians.length === 0 ? (
+        ) : visibleTechnicians.length === 0 ? (
           <EmptyState message="No technician registrations yet." />
         ) : (
           <div className="space-y-3">
-            {technicians.map((t) => (
+            {visibleTechnicians.map((t) => (
               <TechCard key={t.id} tech={t} updating={updatingId === t.id} onUpdate={updateTechnician} onVerify={verifyTechnician} />
             ))}
           </div>
@@ -283,6 +296,22 @@ function StatCard({ label, value, color }: { label: string; value: number; color
       <p className="text-xs font-semibold uppercase tracking-wide opacity-80">{label}</p>
     </div>
   );
+}
+
+function extractPincode(value: string): string {
+  return value.match(/\b\d{6}\b/)?.[0] ?? "";
+}
+
+function getTechnicianDistrict(technician: Technician): string | null {
+  return technician.operating_areas.match(/District:\s*([^;]+)/i)?.[1]?.trim() ?? null;
+}
+
+function getDispatchGroup(booking: Booking, technician: Technician): "Direct PIN Match (Local - Fastest)" | "District Match (Extended Travel)" | "Cross-District (Scheduled Only)" {
+  const bookingPincode = extractPincode(booking.locality);
+  if (bookingPincode && technician.operating_areas.includes(bookingPincode)) return "Direct PIN Match (Local - Fastest)";
+  const bookingDistrict = getPincodeMeta(bookingPincode)?.district;
+  if (bookingDistrict && getTechnicianDistrict(technician) === bookingDistrict) return "District Match (Extended Travel)";
+  return "Cross-District (Scheduled Only)";
 }
 
 function TabBtn({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string }) {
@@ -387,11 +416,13 @@ function BookingCard({
               className="w-full appearance-none rounded-lg border-0 bg-slate-50 py-2 pl-3 pr-9 text-xs font-semibold text-slate-800 ring-1 ring-slate-200 transition focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
             >
               <option value="">— Unassigned —</option>
-              {technicians.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.full_name} ({t.trade})
-                </option>
-              ))}
+              {["Direct PIN Match (Local - Fastest)", "District Match (Extended Travel)", "Cross-District (Scheduled Only)"].map((group) => {
+                const matches = technicians.filter((technician) => getDispatchGroup(booking, technician) === group);
+                if (matches.length === 0) return null;
+                return <optgroup key={group} label={`${group} • ${matches.length} available`}>
+                  {matches.map((technician) => <option key={technician.id} value={technician.id}>{technician.full_name} • {getTechnicianDistrict(technician) ?? "District pending"} • {technician.operating_areas}</option>)}
+                </optgroup>;
+              })}
             </select>
             <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           </div>
