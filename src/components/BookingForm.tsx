@@ -268,9 +268,9 @@ const BookingForm = forwardRef<HTMLDivElement, BookingFormProps>(
               )}
             </Field>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               <Field label="Service Category" error={errors.service_category}>
-                <div className="grid grid-cols-2 gap-2 sm:flex">
+                <div className="grid grid-cols-2 gap-1 rounded-xl bg-slate-200 p-1 sm:grid-cols-4">
                   <CategoryPill
                     active={form.service_category === "Electrician"}
                     onClick={() => handleChange("service_category", "Electrician")}
