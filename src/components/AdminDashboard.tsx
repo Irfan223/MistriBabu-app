@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { ArrowLeft, RefreshCw, Zap, Droplets, Phone, MapPin, Clock, Loader2, UserCheck, ClipboardList, ChevronDown, UserCircle, Search, LogOut, ShieldCheck } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { BRAND } from "@/constants/brand";
 import { useToast } from "@/hooks/useToast";
 import Toast from "@/components/Toast";
 import { getPincodeMeta, TRI_DISTRICT_DATA } from "@/data/triDistrictZones";
@@ -180,7 +181,7 @@ export default function AdminDashboard({ email, onBack }: AdminDashboardProps) {
               <ArrowLeft className="h-5 w-5" /> <span className="hidden text-xs font-semibold sm:inline">Back to Site</span>
             </button>
             <div className="min-w-0">
-              <h1 className="text-sm font-extrabold leading-tight text-slate-900 sm:text-lg">MistriBabu Lead &amp; Partner Management</h1>
+              <h1 className="text-sm font-extrabold leading-tight text-slate-900 sm:text-lg">{BRAND.displayName} Lead &amp; Partner Management</h1>
               <p className="hidden text-xs text-slate-500 sm:block">Secure operations console</p>
             </div>
           </div>
@@ -404,7 +405,7 @@ function BookingCard({
           </div>
         </div>
         <div className="relative flex-1">
-          <label className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-slate-400">Assign Mistri</label>
+          <label className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-slate-400">Assign Expert</label>
           <div className="relative">
             <select
               value={booking.assigned_technician_id ?? ""}
@@ -467,7 +468,7 @@ function TechCard({ tech, updating, onUpdate, onVerify }: { tech: Technician; up
       </div>
       <div className="mt-3 flex flex-wrap gap-2 border-t border-slate-100 pt-3">
         <button disabled={updating} onClick={() => onVerify(tech)} className={`rounded-lg px-3 py-2 text-xs font-bold transition disabled:opacity-50 ${tech.is_verified ? "bg-amber-50 text-amber-700 hover:bg-amber-100" : "bg-emerald-600 text-white hover:bg-emerald-700"}`}>
-          {tech.is_verified ? "Revoke Verification" : "Verify Mistri"}
+          {tech.is_verified ? "Revoke Verification" : "Verify Expert"}
         </button>
         <button disabled={updating} onClick={() => onUpdate(tech.id, { status: tech.status === "ACTIVE" ? "INACTIVE" : "ACTIVE" })} className="rounded-lg bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-200 disabled:opacity-50">
           {tech.status === "ACTIVE" ? "Set Inactive" : "Set Active"}

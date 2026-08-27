@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Loader2, CheckCircle2, User, Phone, Zap, Droplets, MapPin, AlertCircle, BadgeCheck } from "lucide-react";
-import { siteConfig } from "@/config/siteConfig";
+import { BRAND } from "@/constants/brand";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/useToast";
 import Toast from "@/components/Toast";
@@ -97,8 +97,8 @@ export default function TechnicianRegistration({
   };
 
   const buildWhatsAppUrl = (f: TechForm) => {
-    const text = `Hi MistriBabu, I want to join as a technician:\n• *Name:* ${f.full_name}\n• *Trade:* ${f.trade}\n• *Phone:* ${f.phone}\n• *Experience:* ${f.experience_years} years\n• *District:* ${f.primary_district}\n• *Areas:* ${f.operating_areas}\n• *PINs:* ${f.selected_pincodes.join(", ")}`;
-    return `https://wa.me/${siteConfig.whatsappNumber}?text=${encodeURIComponent(text)}`;
+    const text = `Hi ${BRAND.displayName}, I want to join as a verified expert:\n• *Name:* ${f.full_name}\n• *Trade:* ${f.trade}\n• *Phone:* ${f.phone}\n• *Experience:* ${f.experience_years} years\n• *District:* ${f.primary_district}\n• *Areas:* ${f.operating_areas}\n• *PINs:* ${f.selected_pincodes.join(", ")}`;
+    return `https://wa.me/${BRAND.whatsappNumber}?text=${encodeURIComponent(text)}`;
   };
 
   const handleSubmit = async (ev: React.FormEvent) => {
@@ -149,8 +149,8 @@ export default function TechnicianRegistration({
       <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-xl font-extrabold text-slate-900">Mistri Banein</h3>
-            <p className="text-sm text-slate-500">Join {siteConfig.brandName} as a technician</p>
+            <h3 className="text-xl font-extrabold text-slate-900">Join Quick Mistri</h3>
+            <p className="text-sm text-slate-500">Apply as a verified home service expert</p>
           </div>
           <button
             onClick={handleClose}

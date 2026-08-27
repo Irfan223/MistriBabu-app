@@ -1,0 +1,19 @@
+{
+  "name": "Quick Mistri | Home Repair & Maintenance Services",
+  "short_name": "Quick Mistri",
+  "description": "Book verified home repair and maintenance experts with transparent pricing and guaranteed quality.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#059669",
+  "lang": "en-IN",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

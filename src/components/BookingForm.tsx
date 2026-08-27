@@ -1,6 +1,6 @@
 import { useState, useEffect, forwardRef } from "react";
 import { Loader2, CheckCircle2, Calendar, Phone, User, MapPin, Zap, Droplets, AlertCircle } from "lucide-react";
-import { siteConfig } from "@/config/siteConfig";
+import { BRAND } from "@/constants/brand";
 import { checkServiceAvailability, type ServiceAvailability } from "@/utils/serviceAvailabilityEngine";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/useToast";
@@ -119,8 +119,8 @@ const BookingForm = forwardRef<HTMLDivElement, BookingFormProps>(
 
     const buildWhatsAppUrl = (f: FormState) => {
       const formattedAddress = `${f.address.trim()}, PIN: ${f.pincode}`;
-      const text = `Hi MistriBabu! I want to book a service:\n• *Service:* ${f.service_category} - ${f.sub_service}\n• *Name:* ${f.customer_name}\n• *Phone:* ${f.customer_phone}\n• *Address:* ${formattedAddress}\n• *Slot:* ${f.preferred_slot}\n• *Issue:* ${f.problem_description || "—"}`;
-      return `https://wa.me/${siteConfig.whatsappNumber}?text=${encodeURIComponent(text)}`;
+      const text = `Hi ${BRAND.displayName}! I want to book a service:\n• *Service:* ${f.service_category} - ${f.sub_service}\n• *Name:* ${f.customer_name}\n• *Phone:* ${f.customer_phone}\n• *Address:* ${formattedAddress}\n• *Slot:* ${f.preferred_slot}\n• *Issue:* ${f.problem_description || "—"}`;
+      return `https://wa.me/${BRAND.whatsappNumber}?text=${encodeURIComponent(text)}`;
     };
 
     const handleSubmit = async (ev: React.FormEvent) => {
@@ -252,7 +252,7 @@ const BookingForm = forwardRef<HTMLDivElement, BookingFormProps>(
               {pincodeComplete && !availabilityLoading && availabilityError && (
                 <div id="pincode-status" className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 ring-1 ring-red-200">
                   Availability is temporarily unavailable. Please call dispatch to check the nearest technician.
-                  <a href={`tel:${siteConfig.callingNumber}`} className="ml-2 underline">Call Dispatch</a>
+                  <a href={`tel:${BRAND.callingNumber}`} className="ml-2 underline">Call Dispatch</a>
                 </div>
               )}
               {pincodeComplete && !availabilityLoading && availability && (
@@ -263,7 +263,7 @@ const BookingForm = forwardRef<HTMLDivElement, BookingFormProps>(
                   {availability.canBook && availability.status !== "EXACT_PIN_MATCH" && availability.nearestPincode && `Nearest available PIN ${availability.nearestPincode}: ${availability.nearestTechnicianCount} technician${availability.nearestTechnicianCount === 1 ? "" : "s"}`}
                   {!availability.canBook && availability.status === "OUT_OF_SERVICE_REGION" && "❌ We currently serve only Muzaffarpur, Sitamarhi, and Sheohar districts."}
                   {!availability.canBook && availability.status === "NO_TECHNICIAN_AVAILABLE" && "❌ No verified technician is currently available for this PIN code."}
-                  {!availability.canBook && <a href={`tel:${siteConfig.callingNumber}`} className="ml-2 inline-block underline">Call Dispatch</a>}
+                  {!availability.canBook && <a href={`tel:${BRAND.callingNumber}`} className="ml-2 inline-block underline">Call Dispatch</a>}
                 </div>
               )}
             </Field>
@@ -337,7 +337,7 @@ const BookingForm = forwardRef<HTMLDivElement, BookingFormProps>(
               )}
             </button>
             <p className="text-center text-xs text-slate-400">
-              {siteConfig.inspectionFee} visit charge applies. You'll be redirected to WhatsApp to confirm.
+              {BRAND.inspectionFee} visit charge applies. You'll be redirected to WhatsApp to confirm.
             </p>
           </form>
         </div>

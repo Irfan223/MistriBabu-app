@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Zap, Droplets, ArrowRight } from "lucide-react";
-import { serviceCatalog } from "@/config/siteConfig";
+import { SERVICE_CATALOG, BRAND } from "@/constants/brand";
 
 interface ServiceCatalogProps {
   onBookService: (category: string, subService: string) => void;
@@ -9,17 +9,17 @@ interface ServiceCatalogProps {
 export default function ServiceCatalog({ onBookService }: ServiceCatalogProps) {
   const [activeTab, setActiveTab] = useState<"Electrician" | "Plumber">("Electrician");
 
-  const services = serviceCatalog[activeTab];
+  const services = SERVICE_CATALOG[activeTab];
 
   return (
     <section id="services" className="bg-slate-50 py-12 sm:py-16">
       <div className="mx-auto max-w-6xl px-4">
         <div className="text-center">
           <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
-            Our Services
+            {BRAND.serviceCopy.heading}
           </h3>
           <p className="mt-2 text-sm text-slate-500">
-            Transparent pricing. No hidden charges. Pay after service.
+            {BRAND.serviceCopy.description}
           </p>
         </div>
 
