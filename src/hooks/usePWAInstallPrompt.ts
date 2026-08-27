@@ -8,27 +8,43 @@ type BeforeInstallPromptEvent = Event & {
 export function usePWAInstallPrompt() {
   const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [dismissed, setDismissed] = useState(() => sessionStorage.getItem('pwa-install-dismissed') === 'true');
-  const [isStandalone, setIsStandalone] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(() => getStandaloneState());
+  const [isInstalled, setIsInstalled] = useState(() => localStorage.getItem('pwa-installed') === 'true');
   const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !('MSStream' in window);
 
   useEffect(() => {
-    const standalone = window.matchMedia('(display-mode: standalone)').matches ||
-      (navigator as Navigator & { standalone?: boolean }).standalone === true;
-    setIsStandalone(standalone);
+    const updateStandaloneState = () => setIsStandalone(getStandaloneState());
 
     const handleInstallPrompt = (event: Event) => {
       event.preventDefault();
       setInstallEvent(event as BeforeInstallPromptEvent);
     };
+    const handleInstalled = () => {
+      localStorage.setItem('pwa-installed', 'true');
+      setIsInstalled(true);
+      setInstallEvent(null);
+    };
 
     window.addEventListener('beforeinstallprompt', handleInstallPrompt);
-    return () => window.removeEventListener('beforeinstallprompt', handleInstallPrompt);
+    window.addEventListener('appinstalled', handleInstalled);
+    window.addEventListener('pageshow', updateStandaloneState);
+    document.addEventListener('visibilitychange', updateStandaloneState);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleInstallPrompt);
+      window.removeEventListener('appinstalled', handleInstalled);
+      window.removeEventListener('pageshow', updateStandaloneState);
+      document.removeEventListener('visibilitychange', updateStandaloneState);
+    };
   }, []);
 
   const install = async () => {
     if (!installEvent) return;
     await installEvent.prompt();
-    await installEvent.userChoice;
+    const { outcome } = await installEvent.userChoice;
+    if (outcome === 'accepted') {
+      localStorage.setItem('pwa-installed', 'true');
+      setIsInstalled(true);
+    }
     setInstallEvent(null);
   };
 
@@ -41,8 +57,13 @@ export function usePWAInstallPrompt() {
     canInstall: Boolean(installEvent),
     isIOS,
     isStandalone,
-    visible: !isStandalone && !dismissed && (Boolean(installEvent) || isIOS),
+    visible: !isStandalone && !isInstalled && !dismissed && (Boolean(installEvent) || isIOS),
     install,
     dismiss,
   };
+}
+
+function getStandaloneState() {
+  return window.matchMedia('(display-mode: standalone)').matches ||
+    (navigator as Navigator & { standalone?: boolean }).standalone === true;
 }
