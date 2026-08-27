@@ -4,6 +4,7 @@ import { siteConfig } from "@/config/siteConfig";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/useToast";
 import Toast from "@/components/Toast";
+import { TRI_DISTRICT_DATA, type DistrictCluster } from "@/data/triDistrictZones";
 
 interface TechnicianRegistrationProps {
   open: boolean;
@@ -16,6 +17,9 @@ interface TechForm {
   trade: string;
   experience_years: string;
   operating_areas: string;
+  operating_pincode: string;
+  primary_district: DistrictCluster["district"];
+  selected_pincodes: string[];
   aadhaar_number: string;
 }
 
@@ -25,6 +29,9 @@ const emptyTech: TechForm = {
   trade: "Electrician",
   experience_years: "",
   operating_areas: "",
+  operating_pincode: "",
+  primary_district: "Muzaffarpur",
+  selected_pincodes: [],
   aadhaar_number: "",
 };
 
@@ -83,13 +90,14 @@ export default function TechnicianRegistration({
     } else if (isNaN(Number(form.experience_years)) || Number(form.experience_years) < 0) {
       e.experience_years = "Enter a valid number of years";
     }
-    if (!form.operating_areas.trim()) e.operating_areas = "Select at least one area";
+    if (!form.operating_areas.trim()) e.operating_areas = "Enter your operating areas";
+    if (form.selected_pincodes.length === 0) e.operating_pincode = "Select at least one serviceable PIN code";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
   const buildWhatsAppUrl = (f: TechForm) => {
-    const text = `Hi MistriBabu, I want to join as a technician:\n• *Name:* ${f.full_name}\n• *Trade:* ${f.trade}\n• *Phone:* ${f.phone}\n• *Experience:* ${f.experience_years} years\n• *Areas:* ${f.operating_areas}`;
+    const text = `Hi MistriBabu, I want to join as a technician:\n• *Name:* ${f.full_name}\n• *Trade:* ${f.trade}\n• *Phone:* ${f.phone}\n• *Experience:* ${f.experience_years} years\n• *District:* ${f.primary_district}\n• *Areas:* ${f.operating_areas}\n• *PINs:* ${f.selected_pincodes.join(", ")}`;
     return `https://wa.me/${siteConfig.whatsappNumber}?text=${encodeURIComponent(text)}`;
   };
 
@@ -105,10 +113,10 @@ export default function TechnicianRegistration({
         phone: form.phone.trim(),
         trade: form.trade,
         experience_years: Number(form.experience_years),
-        operating_areas: form.operating_areas.trim(),
+        operating_areas: `District: ${form.primary_district}; Areas: ${form.operating_areas.trim()}; PINs: ${form.selected_pincodes.join(", ")}`,
         aadhaar_number: form.aadhaar_number.trim() || null,
         is_verified: false,
-        status: "ACTIVE",
+        status: "PENDING_VERIFICATION",
       });
 
       if (error) throw error;
@@ -242,18 +250,30 @@ export default function TechnicianRegistration({
               icon={<MapPin className="h-4 w-4" />}
               error={errors.operating_areas}
             >
-              <select
+              <textarea
                 value={form.operating_areas}
                 onChange={(e) => handleChange("operating_areas", e.target.value)}
+                placeholder="e.g. Mithanpura, Ahiyapur"
                 className="form-input"
-              >
-                <option value="">Select your main area</option>
-                {siteConfig.localities.map((loc) => (
-                  <option key={loc} value={loc}>
-                    {loc}
-                  </option>
-                ))}
+                rows={2}
+              />
+            </Field>
+
+            <Field label="Primary District" error={errors.primary_district}>
+              <select value={form.primary_district} onChange={(e) => { setForm((current) => ({ ...current, primary_district: e.target.value as DistrictCluster["district"], selected_pincodes: [] })); setErrors((current) => ({ ...current, operating_pincode: "" })); }} className="form-input">
+                {Object.keys(TRI_DISTRICT_DATA).map((district) => <option key={district} value={district}>{district}</option>)}
               </select>
+            </Field>
+
+            <Field label="Serviceable PIN Codes" icon={<MapPin className="h-4 w-4" />} error={errors.operating_pincode}>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {TRI_DISTRICT_DATA[form.primary_district].pincodes.map((entry) => {
+                  const selected = form.selected_pincodes.includes(entry.pincode);
+                  return <button type="button" key={entry.pincode} onClick={() => setForm((current) => ({ ...current, selected_pincodes: selected ? current.selected_pincodes.filter((pin) => pin !== entry.pincode) : [...current.selected_pincodes, entry.pincode] }))} className={`rounded-lg p-2 text-left text-xs font-semibold ring-1 transition ${selected ? "bg-blue-50 text-blue-700 ring-blue-300" : "bg-white text-slate-600 ring-slate-200 hover:bg-slate-50"}`}>
+                    {entry.pincode} - {entry.hubName} ({entry.type})
+                  </button>;
+                })}
+              </div>
             </Field>
 
             <Field label="Aadhaar Number (optional)" icon={<BadgeCheck className="h-4 w-4" />}>
@@ -270,7 +290,7 @@ export default function TechnicianRegistration({
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || form.selected_pincodes.length === 0}
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-6 py-3.5 text-base font-bold text-white shadow-lg transition hover:bg-emerald-500 active:scale-95 disabled:opacity-70"
             >
               {loading ? (

@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import { ShieldCheck, Lock } from "lucide-react";
+import type { Session } from "@supabase/supabase-js";
+import { Lock } from "lucide-react";
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
 import ServiceCatalog from "@/components/ServiceCatalog";
@@ -9,6 +10,8 @@ import StickyBar from "@/components/StickyBar";
 import ConfirmationModal from "@/components/ConfirmationModal";
 import TechnicianRegistration from "@/components/TechnicianRegistration";
 import AdminDashboard from "@/components/AdminDashboard";
+import AdminLoginModal from "@/components/AdminLoginModal";
+import { supabase } from "@/lib/supabase";
 import { siteConfig } from "@/config/siteConfig";
 
 export default function App() {
@@ -20,12 +23,43 @@ export default function App() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [bookingId, setBookingId] = useState<string | null>(null);
   const [techModalOpen, setTechModalOpen] = useState(false);
+  const [adminSession, setAdminSession] = useState<Session | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
   const bookingRef = useRef<HTMLDivElement>(null);
+
+  const verifyAdminSession = async (session: Session | null) => {
+    if (!session) {
+      setAdminSession(null);
+      setAuthChecked(true);
+      return;
+    }
+    const { data } = await supabase.from("admin_users").select("id").eq("id", session.user.id).maybeSingle();
+    if (data) {
+      setAdminSession(session);
+    } else {
+      await supabase.auth.signOut();
+      setAdminSession(null);
+    }
+    setAuthChecked(true);
+  };
 
   useEffect(() => {
     const onHashChange = () => setRoute(window.location.hash);
     window.addEventListener("hashchange", onHashChange);
     return () => window.removeEventListener("hashchange", onHashChange);
+  }, []);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => verifyAdminSession(data.session));
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) {
+        setAdminSession(null);
+        setAuthChecked(true);
+        return;
+      }
+      setTimeout(() => verifyAdminSession(session), 0);
+    });
+    return () => listener.subscription.unsubscribe();
   }, []);
 
   const isAdmin = route === "#/admin" || route === "#admin";
@@ -44,8 +78,8 @@ export default function App() {
     setConfirmOpen(true);
   };
 
-  if (isAdmin) {
-    return <AdminDashboard onBack={() => { window.location.hash = ""; }} />;
+  if (isAdmin && authChecked && adminSession) {
+    return <AdminDashboard email={adminSession.user.email ?? ""} onBack={() => { window.location.hash = ""; }} />;
   }
 
   return (
@@ -105,6 +139,11 @@ export default function App() {
       <TechnicianRegistration
         open={techModalOpen}
         onClose={() => setTechModalOpen(false)}
+      />
+      <AdminLoginModal
+        open={isAdmin && authChecked && !adminSession}
+        onClose={() => { window.location.hash = ""; }}
+        onAuthorized={() => undefined}
       />
     </div>
   );

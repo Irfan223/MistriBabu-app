@@ -6,7 +6,7 @@ interface HeaderProps {
   onJoinClick: () => void;
 }
 
-export default function Header({ onBookClick, onJoinClick }: HeaderProps) {
+export default function Header({ onJoinClick }: HeaderProps) {
   const waLink = `https://wa.me/${siteConfig.whatsappNumber}?text=${encodeURIComponent(
     "Hi MistriBabu! I want to know more about your services."
   )}`;
