@@ -36,12 +36,12 @@ function ToastItem({ toast, onDismiss }: { toast: ToastMessage; onDismiss: (id: 
     <div
       className={`flex items-start gap-2.5 rounded-xl px-4 py-3 shadow-lg ring-1 animate-in-toast max-w-sm ${
         isSuccess
-          ? "bg-emerald-50 text-emerald-800 ring-emerald-200"
+          ? "bg-orange-50 text-orange-800 ring-orange-200"
           : "bg-red-50 text-red-800 ring-red-200"
       }`}
     >
       {isSuccess ? (
-        <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
+        <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-orange-600" />
       ) : (
         <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-600" />
       )}

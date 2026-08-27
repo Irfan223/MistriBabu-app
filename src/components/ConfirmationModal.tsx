@@ -22,8 +22,8 @@ export default function ConfirmationModal({
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/60 p-4 backdrop-blur-sm sm:items-center">
       <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl animate-in">
         <div className="flex items-start justify-between">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100">
-            <CheckCircle2 className="h-7 w-7 text-emerald-600" />
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-100">
+            <CheckCircle2 className="h-7 w-7 text-orange-600" />
           </div>
           <button
             onClick={onClose}
@@ -65,7 +65,7 @@ export default function ConfirmationModal({
             href={waLink}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-emerald-600 py-3 text-sm font-semibold text-white transition hover:bg-emerald-500"
+            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-orange-600 py-3 text-sm font-semibold text-white transition hover:bg-orange-500"
           >
             <MessageCircle className="h-4 w-4" />
             WhatsApp

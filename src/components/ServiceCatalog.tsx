@@ -59,7 +59,7 @@ export default function ServiceCatalog({ onBookService }: ServiceCatalogProps) {
               <p className="mt-1 text-xs text-slate-500 leading-relaxed flex-1">
                 {svc.desc}
               </p>
-              <p className="mt-3 text-sm font-bold text-emerald-600">
+              <p className="mt-3 text-sm font-bold text-orange-600">
                 {svc.price}
               </p>
               <button

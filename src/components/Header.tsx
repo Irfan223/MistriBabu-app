@@ -1,4 +1,4 @@
-import { Wrench, Phone, MessageCircle, UserPlus } from "lucide-react";
+import { Phone, MessageCircle, UserPlus } from "lucide-react";
 import { BRAND } from "@/constants/brand";
 
 interface HeaderProps {
@@ -12,11 +12,11 @@ export default function Header({ onJoinClick }: HeaderProps) {
   )}`;
 
   return (
-    <header className="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md border-b border-blue-800/40 shadow-lg">
+    <header className="sticky top-0 z-40 bg-slate-950/95 backdrop-blur-md border-b border-blue-900/40 shadow-lg">
       <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 shadow-md ring-1 ring-blue-400/30">
-            <Wrench className="h-5 w-5 text-white" strokeWidth={2.5} />
+          <div className="flex h-10 w-16 shrink-0 items-center justify-center rounded-xl bg-white shadow-md ring-1 ring-orange-400/30">
+            <img src="/quick-mistri-logo.svg" alt="Quick Mistri" className="h-8 w-14" />
           </div>
           <div className="min-w-0">
             <h1 className="text-lg font-bold text-white leading-tight tracking-tight">
@@ -31,7 +31,7 @@ export default function Header({ onJoinClick }: HeaderProps) {
         <div className="flex items-center gap-2">
           <a
             href={`tel:${BRAND.callingNumber}`}
-            className="hidden sm:flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-blue-500 active:scale-95"
+            className="hidden sm:flex items-center gap-1.5 rounded-lg bg-orange-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-orange-500 active:scale-95"
           >
             <Phone className="h-4 w-4" />
             Call
@@ -40,7 +40,7 @@ export default function Header({ onJoinClick }: HeaderProps) {
             href={waLink}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500 active:scale-95"
+            className="flex items-center gap-1.5 rounded-lg bg-orange-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-orange-500 active:scale-95"
           >
             <MessageCircle className="h-4 w-4" />
             <span className="hidden xs:inline sm:inline">WhatsApp</span>

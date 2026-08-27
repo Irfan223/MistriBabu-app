@@ -256,7 +256,7 @@ const BookingForm = forwardRef<HTMLDivElement, BookingFormProps>(
                 </div>
               )}
               {pincodeComplete && !availabilityLoading && availability && (
-                <div id="pincode-status" className={`mt-2 rounded-lg px-3 py-2 text-xs font-semibold ring-1 ${availability.status === "EXACT_PIN_MATCH" ? "bg-emerald-50 text-emerald-700 ring-emerald-200" : availability.canBook ? "bg-amber-50 text-amber-800 ring-amber-200" : "bg-red-50 text-red-700 ring-red-200"}`}>
+                <div id="pincode-status" className={`mt-2 rounded-lg px-3 py-2 text-xs font-semibold ring-1 ${availability.status === "EXACT_PIN_MATCH" ? "bg-orange-50 text-orange-700 ring-orange-200" : availability.canBook ? "bg-amber-50 text-amber-800 ring-amber-200" : "bg-red-50 text-red-700 ring-red-200"}`}>
                   <strong className="block">PIN {form.pincode}: {availability.exactTechnicianCount} technician{availability.exactTechnicianCount === 1 ? "" : "s"} available at this PIN</strong>
                   {availability.status === "EXACT_PIN_MATCH" && `✓ Service available in ${availability.hubName}, ${availability.district} • ETA: ${availability.eta}`}
                   {availability.canBook && availability.status !== "EXACT_PIN_MATCH" && `⚠️ ${availability.technicianCount} technician${availability.technicianCount === 1 ? "" : "s"} available nearby with extended ETA: ${availability.eta}. Immediate dispatch is not available for this location, but you can book a scheduled slot.`}
@@ -322,7 +322,7 @@ const BookingForm = forwardRef<HTMLDivElement, BookingFormProps>(
             <button
               type="submit"
               disabled={loading || availabilityLoading || !pincodeValid}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-6 py-3.5 text-base font-bold text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-500 active:scale-95 disabled:cursor-not-allowed disabled:opacity-70"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-orange-600 px-6 py-3.5 text-base font-bold text-white shadow-lg shadow-orange-600/20 transition hover:bg-orange-500 active:scale-95 disabled:cursor-not-allowed disabled:opacity-70"
             >
               {loading ? (
                 <>
@@ -374,7 +374,7 @@ function Field({
       {error ? (
         <p className="mt-1 text-xs font-medium text-red-600">{error}</p>
       ) : helper ? (
-        <p className={`mt-1 text-xs ${helperValid ? "text-emerald-600" : "text-slate-400"}`}>
+        <p className={`mt-1 text-xs ${helperValid ? "text-orange-600" : "text-slate-400"}`}>
           {helper}
         </p>
       ) : null}

@@ -6,11 +6,11 @@
   "scope": "/",
   "display": "standalone",
   "background_color": "#0f172a",
-  "theme_color": "#059669",
+  "theme_color": "#ff6200",
   "lang": "en-IN",
   "icons": [
     {
-      "src": "/favicon.svg",
+      "src": "/quick-mistri-logo.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"

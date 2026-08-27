@@ -7,15 +7,15 @@ interface HeroProps {
 
 export default function Hero({ onBookClick }: HeroProps) {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-slate-900 via-slate-900 to-blue-950">
+    <section className="relative overflow-hidden bg-gradient-to-b from-slate-950 via-slate-900 to-blue-950">
       <div className="absolute inset-0 opacity-20">
-        <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-blue-500 blur-3xl" />
-        <div className="absolute -bottom-32 -left-20 h-72 w-72 rounded-full bg-emerald-500 blur-3xl" />
+        <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-orange-500 blur-3xl" />
+        <div className="absolute -bottom-32 -left-20 h-72 w-72 rounded-full bg-blue-600 blur-3xl" />
       </div>
 
       <div className="relative mx-auto max-w-6xl px-4 py-10 sm:py-16">
         <div className="flex flex-col items-center text-center">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-400">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-orange-500/20 bg-orange-500/10 px-3 py-1 text-xs font-semibold text-orange-400">
             <span aria-hidden="true">📍</span>
             {BRAND.hero.regionLabel}
           </span>
@@ -35,7 +35,7 @@ export default function Hero({ onBookClick }: HeroProps) {
 
           <button
             onClick={onBookClick}
-            className="mt-6 flex items-center gap-2 rounded-xl bg-emerald-500 px-8 py-3.5 text-base font-bold text-white shadow-lg shadow-emerald-500/30 transition hover:bg-emerald-400 active:scale-95"
+            className="mt-6 flex items-center gap-2 rounded-xl bg-orange-600 px-8 py-3.5 text-base font-bold text-white shadow-lg shadow-orange-600/30 transition hover:bg-orange-500 active:scale-95"
           >
             {BRAND.serviceCopy.bookingButton}
           </button>
