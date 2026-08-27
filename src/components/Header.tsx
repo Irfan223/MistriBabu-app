@@ -23,7 +23,7 @@ export default function Header({ onJoinClick }: HeaderProps) {
               {siteConfig.brandName}
             </h1>
             <p className="text-[10px] text-blue-300 leading-none truncate">
-              {siteConfig.city} • 60 min service
+              Muzaffarpur • Sitamarhi • Sheohar
             </p>
           </div>
         </div>

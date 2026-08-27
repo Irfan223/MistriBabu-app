@@ -10,7 +10,7 @@ export default function TrustBadges() {
     },
     {
       icon: <BadgeCheck className="h-6 w-6" />,
-      title: "Aadhaar Verified",
+      title: "Verified Technicians",
       desc: "Every technician is background-checked",
     },
     {
@@ -31,7 +31,7 @@ export default function TrustBadges() {
     {
       icon: <Star className="h-6 w-6" />,
       title: "Trusted Locally",
-      desc: "Built for the people of Muzaffarpur",
+      desc: "Built for North Bihar homes",
     },
   ];
 

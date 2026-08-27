@@ -5,7 +5,7 @@ const MUZAFFARPUR_PINCODES = new Set<string>([
 ]);
 
 export const PINCODE_SERVICE_ERROR =
-  "We currently only serve Muzaffarpur district. Service is not available for this PIN code.";
+  "We currently serve Muzaffarpur, Sitamarhi, and Sheohar districts. Service is not available for this PIN code.";
 
 export const PINCODE_ERROR_MESSAGE = PINCODE_SERVICE_ERROR;
 

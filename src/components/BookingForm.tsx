@@ -36,6 +36,13 @@ const emptyForm: FormState = {
   preferred_slot: "Today",
 };
 
+const timeSlotOptions = [
+  "09:00 AM - 12:00 PM",
+  "12:00 PM - 03:00 PM",
+  "03:00 PM - 06:00 PM",
+  "06:00 PM - 08:00 PM",
+];
+
 const BookingForm = forwardRef<HTMLDivElement, BookingFormProps>(
   ({ prefillCategory, prefillSubService, onSubmitSuccess }, ref) => {
     const [form, setForm] = useState<FormState>(emptyForm);
@@ -46,6 +53,11 @@ const BookingForm = forwardRef<HTMLDivElement, BookingFormProps>(
     const [availability, setAvailability] = useState<ServiceAvailability | null>(null);
     const [availabilityLoading, setAvailabilityLoading] = useState(false);
     const [availabilityError, setAvailabilityError] = useState(false);
+    const [preferredSlot, setPreferredSlot] = useState<"today_asap" | "tomorrow" | "custom">("today_asap");
+    const [customDate, setCustomDate] = useState<string>(
+      new Date().toISOString().split("T")[0]
+    );
+    const [customTimeSlot, setCustomTimeSlot] = useState<string>("09:00 AM - 12:00 PM");
     const { toasts, showToast, dismiss } = useToast();
 
     useEffect(() => {
@@ -117,6 +129,26 @@ const BookingForm = forwardRef<HTMLDivElement, BookingFormProps>(
       }
     };
 
+    const handlePreferredSlotChange = (slot: "today_asap" | "tomorrow" | "custom") => {
+      setPreferredSlot(slot);
+      const slotLabel = slot === "today_asap"
+        ? "Today"
+        : slot === "tomorrow"
+          ? "Tomorrow"
+          : `${customDate} (${customTimeSlot})`;
+      handleChange("preferred_slot", slotLabel);
+    };
+
+    const handleCustomDateChange = (date: string) => {
+      setCustomDate(date);
+      handleChange("preferred_slot", `${date} (${customTimeSlot})`);
+    };
+
+    const handleCustomTimeSlotChange = (timeSlot: string) => {
+      setCustomTimeSlot(timeSlot);
+      handleChange("preferred_slot", `${customDate} (${timeSlot})`);
+    };
+
     const buildWhatsAppUrl = (f: FormState) => {
       const formattedAddress = `${f.address.trim()}, PIN: ${f.pincode}`;
       const text = `Hi MistriBabu! I want to book a service:\n• *Service:* ${f.service_category} - ${f.sub_service}\n• *Name:* ${f.customer_name}\n• *Phone:* ${f.customer_phone}\n• *Address:* ${formattedAddress}\n• *Slot:* ${f.preferred_slot}\n• *Issue:* ${f.problem_description || "—"}`;
@@ -151,6 +183,9 @@ const BookingForm = forwardRef<HTMLDivElement, BookingFormProps>(
         window.open(buildWhatsAppUrl(form), "_blank");
         onSubmitSuccess(bookingId);
         setForm(emptyForm);
+        setPreferredSlot("today_asap");
+        setCustomDate(new Date().toISOString().split("T")[0]);
+        setCustomTimeSlot("09:00 AM - 12:00 PM");
         setHelpers({});
       } catch (err) {
         const msg = err instanceof Error
@@ -288,14 +323,36 @@ const BookingForm = forwardRef<HTMLDivElement, BookingFormProps>(
 
               <Field label="Preferred Slot" icon={<Calendar className="h-4 w-4" />} error={errors.preferred_slot}>
                 <select
-                  value={form.preferred_slot}
-                  onChange={(e) => handleChange("preferred_slot", e.target.value)}
+                  value={preferredSlot}
+                  onChange={(e) => handlePreferredSlotChange(e.target.value as "today_asap" | "tomorrow" | "custom")}
                   className="form-input"
                 >
-                  <option value="Today">Today (ASAP)</option>
-                  <option value="Tomorrow">Tomorrow</option>
-                  <option value="Specific Time">Pick a specific time</option>
+                  <option value="today_asap">Today (ASAP)</option>
+                  <option value="tomorrow">Tomorrow</option>
+                  <option value="custom">Pick a specific date and time</option>
                 </select>
+                {preferredSlot === "custom" && (
+                  <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    <input
+                      type="date"
+                      min={new Date().toISOString().split("T")[0]}
+                      value={customDate}
+                      onChange={(e) => handleCustomDateChange(e.target.value)}
+                      className="form-input"
+                      aria-label="Preferred date"
+                    />
+                    <select
+                      value={customTimeSlot}
+                      onChange={(e) => handleCustomTimeSlotChange(e.target.value)}
+                      className="form-input"
+                      aria-label="Preferred time slot"
+                    >
+                      {timeSlotOptions.map((timeSlot) => (
+                        <option key={timeSlot} value={timeSlot}>{timeSlot}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </Field>
             </div>
 

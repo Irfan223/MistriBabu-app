@@ -125,7 +125,7 @@ export default function App() {
             </button>
           </div>
           <p className="mt-4 text-xs text-slate-500">
-            © {new Date().getFullYear()} {siteConfig.brandName}. Made for {siteConfig.city}, Bihar.
+            © 2026 {siteConfig.brandName}. Proudly serving Muzaffarpur, Sitamarhi &amp; Sheohar, Bihar.
           </p>
         </div>
       </footer>

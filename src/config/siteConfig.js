@@ -1,10 +1,11 @@
 export const siteConfig = {
   brandName: "MistriBabu",
-  tagline: "Ghar Ka Har Kaam, Expert Ke Naam",
+  tagline: "North Bihar's Most Trusted Plumbers & Electricians at Your Doorstep",
   subTagline:
-    "Muzaffarpur's Trusted Plumbers & Electricians at Your Doorstep in 60 Mins",
+    "Verified local technicians across all urban & rural blocks. Fast doorstep service within 60 mins.",
   whatsappNumber: "918910541678",
   callingNumber: "+918910541678",
+  region: "Muzaffarpur • Sitamarhi • Sheohar",
   city: "Muzaffarpur",
   localities: [
     "Mithanpura",
