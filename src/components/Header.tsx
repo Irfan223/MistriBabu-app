@@ -56,16 +56,27 @@ export default function Header({ onBookClick, onJoinClick }: HeaderProps) {
           </button>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setMenuOpen((open) => !open)}
-          aria-expanded={menuOpen}
-          aria-controls="mobile-menu"
-          aria-label={menuOpen ? "Close menu" : "Open menu"}
-          className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/10 text-white ring-1 ring-white/15 transition hover:bg-white/20 sm:hidden"
-        >
-          {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </button>
+        <div className="flex items-center gap-2 sm:hidden">
+          <button
+            type="button"
+            onClick={onJoinClick}
+            aria-label="Join Quick Mistri as a technician"
+            className="flex h-10 items-center gap-1.5 rounded-lg bg-orange-600 px-2.5 text-xs font-bold text-white transition hover:bg-orange-500"
+          >
+            <UserPlus className="h-4 w-4" />
+            <span>Join</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setMenuOpen((open) => !open)}
+            aria-expanded={menuOpen}
+            aria-controls="mobile-menu"
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/10 text-white ring-1 ring-white/15 transition hover:bg-white/20"
+          >
+            {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+        </div>
       </div>
 
       {menuOpen && (
@@ -97,14 +108,6 @@ export default function Header({ onBookClick, onJoinClick }: HeaderProps) {
               <MessageCircle className="h-4 w-4 text-orange-400" />
               WhatsApp
             </a>
-            <button
-              type="button"
-              onClick={() => { onJoinClick(); setMenuOpen(false); }}
-              className="flex items-center gap-3 rounded-lg bg-white/10 px-4 py-3 text-left text-sm font-semibold text-white ring-1 ring-white/10"
-            >
-              <UserPlus className="h-4 w-4 text-orange-400" />
-              Join Quick Mistri
-            </button>
           </div>
         </div>
       )}
