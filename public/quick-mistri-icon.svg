@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Quick Mistri">
+  <rect width="512" height="512" rx="112" fill="#ffffff"/>
+  <g transform="translate(38 145) scale(.84)">
+    <path fill="#063b86" d="M72 83H12a7 7 0 0 1 0-14h70a7 7 0 0 1 0 14Zm-10 27H5a7 7 0 0 1 0-14h57a7 7 0 0 1 0 14Zm10 27H12a7 7 0 0 1 0-14h60a7 7 0 0 1 0 14Z"/>
+    <path fill="#063b86" fill-rule="evenodd" d="M202 28c-56 0-101 39-101 87s45 87 101 87c16 0 31-3 45-9l37 30 29-30-35-34c16-13 25-28 25-44 0-48-45-87-101-87Zm0 42c31 0 56 20 56 45s-25 45-56 45-56-20-56-45 25-45 56-45Z" clip-rule="evenodd"/>
+    <path fill="#063b86" d="m204 124 63 64h-47l-40-40Z"/>
+    <path fill="#ff6200" d="m278 64 53 55 66-66h47l-25 130h-47l15-77-56 57-53-56Z"/>
+  </g>
+</svg>
