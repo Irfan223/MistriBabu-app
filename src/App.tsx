@@ -12,6 +12,7 @@ import TechnicianRegistration from "@/components/TechnicianRegistration";
 import AdminDashboard from "@/components/AdminDashboard";
 import AdminLoginModal from "@/components/AdminLoginModal";
 import InstallPromptBanner from "@/components/InstallPromptBanner";
+import NearbyMistriDiscovery from "@/components/NearbyMistriDiscovery";
 import { supabase } from "@/lib/supabase";
 import { BRAND } from "@/constants/brand";
 
@@ -90,6 +91,7 @@ export default function App() {
       <main>
         <Hero onBookClick={scrollToBooking} />
         <ServiceCatalog onBookService={handleBookService} />
+        <NearbyMistriDiscovery onBook={(category) => handleBookService(category, "")} />
         <BookingForm
           ref={bookingRef}
           prefillCategory={bookingPrefill.category}
