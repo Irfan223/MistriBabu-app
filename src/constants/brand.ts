@@ -127,4 +127,48 @@ export const SERVICE_CATALOG = {
       desc: "Overhead tank cleaning & drain blockage",
     },
   ],
+  AC: [
+    {
+      name: "AC Service & Cleaning",
+      price: "From ₹499",
+      desc: "Deep cleaning for split and window AC units",
+    },
+    {
+      name: "AC Repair & Gas Check",
+      price: "From ₹299",
+      desc: "Cooling issues, gas leakage checks and repairs",
+    },
+    {
+      name: "AC Installation",
+      price: "From ₹999",
+      desc: "Professional split and window AC installation",
+    },
+    {
+      name: "AC Uninstallation",
+      price: "From ₹499",
+      desc: "Careful removal for shifting or replacement",
+    },
+  ],
+  Painter: [
+    {
+      name: "Room Painting",
+      price: "From ₹1,499",
+      desc: "Neat interior wall painting for rooms and homes",
+    },
+    {
+      name: "Wall Texture & Design",
+      price: "From ₹1,999",
+      desc: "Decorative textures and feature wall finishes",
+    },
+    {
+      name: "Exterior Painting",
+      price: "From ₹1,999",
+      desc: "Weather-resistant exterior painting and touch-ups",
+    },
+    {
+      name: "Putty & Surface Preparation",
+      price: "From ₹699",
+      desc: "Crack filling, putty work and smooth surface prep",
+    },
+  ],
 } as const;

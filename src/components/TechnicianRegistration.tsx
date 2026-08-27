@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Loader2, CheckCircle2, User, Phone, Zap, Droplets, MapPin, AlertCircle, BadgeCheck } from "lucide-react";
+import { Loader2, CheckCircle2, User, Phone, Zap, Droplets, AirVent, Paintbrush, MapPin, AlertCircle, BadgeCheck } from "lucide-react";
 import { BRAND } from "@/constants/brand";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/useToast";
@@ -230,6 +230,18 @@ export default function TechnicianRegistration({
                   onClick={() => handleChange("trade", "Plumber")}
                   icon={<Droplets className="h-4 w-4" />}
                   label="Plumber"
+                />
+                <TradePill
+                  active={form.trade === "AC"}
+                  onClick={() => handleChange("trade", "AC")}
+                  icon={<AirVent className="h-4 w-4" />}
+                  label="AC"
+                />
+                <TradePill
+                  active={form.trade === "Painter"}
+                  onClick={() => handleChange("trade", "Painter")}
+                  icon={<Paintbrush className="h-4 w-4" />}
+                  label="Painter"
                 />
               </div>
             </Field>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Zap, Droplets, ArrowRight } from "lucide-react";
+import { Zap, Droplets, AirVent, Paintbrush, ArrowRight } from "lucide-react";
 import { SERVICE_CATALOG, BRAND } from "@/constants/brand";
 
 interface ServiceCatalogProps {
@@ -7,7 +7,7 @@ interface ServiceCatalogProps {
 }
 
 export default function ServiceCatalog({ onBookService }: ServiceCatalogProps) {
-  const [activeTab, setActiveTab] = useState<"Electrician" | "Plumber">("Electrician");
+  const [activeTab, setActiveTab] = useState<"Electrician" | "Plumber" | "AC" | "Painter">("Electrician");
 
   const services = SERVICE_CATALOG[activeTab];
 
@@ -37,6 +37,18 @@ export default function ServiceCatalog({ onBookService }: ServiceCatalogProps) {
               icon={<Droplets className="h-4 w-4" />}
               label="Plumber"
             />
+            <TabButton
+              active={activeTab === "AC"}
+              onClick={() => setActiveTab("AC")}
+              icon={<AirVent className="h-4 w-4" />}
+              label="AC"
+            />
+            <TabButton
+              active={activeTab === "Painter"}
+              onClick={() => setActiveTab("Painter")}
+              icon={<Paintbrush className="h-4 w-4" />}
+              label="Painter"
+            />
           </div>
         </div>
 
@@ -49,8 +61,12 @@ export default function ServiceCatalog({ onBookService }: ServiceCatalogProps) {
               <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
                 {activeTab === "Electrician" ? (
                   <Zap className="h-5 w-5" />
-                ) : (
+                ) : activeTab === "Plumber" ? (
                   <Droplets className="h-5 w-5" />
+                ) : activeTab === "AC" ? (
+                  <AirVent className="h-5 w-5" />
+                ) : (
+                  <Paintbrush className="h-5 w-5" />
                 )}
               </div>
               <h4 className="text-base font-bold text-slate-900 leading-snug">

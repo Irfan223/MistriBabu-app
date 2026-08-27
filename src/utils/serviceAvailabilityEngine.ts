@@ -24,7 +24,7 @@ export interface ServiceAvailability {
 const OUTSIDE_REGION_MESSAGE =
   "We currently do not offer on-demand service outside Muzaffarpur, Sitamarhi, and Sheohar districts.";
 
-type Trade = "Electrician" | "Plumber";
+export type Trade = "Electrician" | "Plumber" | "AC" | "Painter";
 
 async function getAvailabilityCounts(pincode: string, trade?: Trade) {
   const { data, error } = await supabase.rpc("get_service_availability_counts", {

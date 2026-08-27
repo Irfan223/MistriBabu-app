@@ -1,5 +1,5 @@
 import { useState, useEffect, forwardRef } from "react";
-import { Loader2, CheckCircle2, Calendar, Phone, User, MapPin, Zap, Droplets, AlertCircle } from "lucide-react";
+import { Loader2, CheckCircle2, Calendar, Phone, User, MapPin, Zap, Droplets, AirVent, Paintbrush, AlertCircle } from "lucide-react";
 import { BRAND } from "@/constants/brand";
 import { checkServiceAvailability, type ServiceAvailability } from "@/utils/serviceAvailabilityEngine";
 import { supabase } from "@/lib/supabase";
@@ -66,7 +66,7 @@ const BookingForm = forwardRef<HTMLDivElement, BookingFormProps>(
       let cancelled = false;
       setAvailabilityLoading(true);
       setAvailabilityError(false);
-      checkServiceAvailability(form.pincode, form.service_category as "Electrician" | "Plumber")
+      checkServiceAvailability(form.pincode, form.service_category as "Electrician" | "Plumber" | "AC" | "Painter")
         .then((result) => { if (!cancelled) setAvailability(result); })
         .catch(() => { if (!cancelled) { setAvailability(null); setAvailabilityError(true); } })
         .finally(() => { if (!cancelled) setAvailabilityLoading(false); });
@@ -282,6 +282,18 @@ const BookingForm = forwardRef<HTMLDivElement, BookingFormProps>(
                     onClick={() => handleChange("service_category", "Plumber")}
                     icon={<Droplets className="h-4 w-4" />}
                     label="Plumber"
+                  />
+                  <CategoryPill
+                    active={form.service_category === "AC"}
+                    onClick={() => handleChange("service_category", "AC")}
+                    icon={<AirVent className="h-4 w-4" />}
+                    label="AC"
+                  />
+                  <CategoryPill
+                    active={form.service_category === "Painter"}
+                    onClick={() => handleChange("service_category", "Painter")}
+                    icon={<Paintbrush className="h-4 w-4" />}
+                    label="Painter"
                   />
                 </div>
               </Field>

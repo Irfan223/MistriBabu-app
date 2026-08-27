@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { ArrowLeft, RefreshCw, Zap, Droplets, Phone, MapPin, Clock, Loader2, UserCheck, ClipboardList, ChevronDown, UserCircle, Search, LogOut, ShieldCheck } from "lucide-react";
+import { ArrowLeft, RefreshCw, Zap, Droplets, AirVent, Paintbrush, Phone, MapPin, Clock, Loader2, UserCheck, ClipboardList, ChevronDown, UserCircle, Search, LogOut, ShieldCheck } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { BRAND } from "@/constants/brand";
 import { useToast } from "@/hooks/useToast";
@@ -369,7 +369,7 @@ function BookingCard({
           </div>
           <div className="mt-2 flex items-center gap-1.5 text-xs">
             <span className="flex items-center gap-1 font-semibold text-blue-600">
-              {booking.service_category === "Electrician" ? <Zap className="h-3.5 w-3.5" /> : <Droplets className="h-3.5 w-3.5" />}
+              {booking.service_category === "Electrician" ? <Zap className="h-3.5 w-3.5" /> : booking.service_category === "Plumber" ? <Droplets className="h-3.5 w-3.5" /> : booking.service_category === "AC" ? <AirVent className="h-3.5 w-3.5" /> : <Paintbrush className="h-3.5 w-3.5" />}
               {booking.service_category}
             </span>
             <span className="text-slate-300">•</span>
