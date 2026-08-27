@@ -1,5 +1,6 @@
 {
-  "name": "vite-react-typescript-starter",
+  "name": "quick-mistri-app",
+  "description": "Book verified home repair and maintenance experts with transparent pricing.",
   "private": true,
   "version": "0.0.0",
   "type": "module",

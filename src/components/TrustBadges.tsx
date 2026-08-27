@@ -1,21 +1,21 @@
 import { ShieldCheck, BadgeCheck, Clock, IndianRupee, Wrench, Star } from "lucide-react";
-import { siteConfig } from "@/config/siteConfig";
+import { BRAND } from "@/constants/brand";
 
 export default function TrustBadges() {
   const badges = [
     {
       icon: <IndianRupee className="h-6 w-6" />,
-      title: `${siteConfig.inspectionFee} Inspection`,
+      title: BRAND.trust.inspection,
       desc: "Low visit charge, adjusted in final bill",
     },
     {
       icon: <BadgeCheck className="h-6 w-6" />,
-      title: "Aadhaar Verified",
-      desc: "Every technician is background-checked",
+      title: BRAND.trust.experts,
+      desc: "Every expert is background-checked",
     },
     {
       icon: <ShieldCheck className="h-6 w-6" />,
-      title: siteConfig.guaranteeDays,
+      title: BRAND.trust.warranty,
       desc: "Free rework if the issue comes back",
     },
     {
@@ -25,13 +25,13 @@ export default function TrustBadges() {
     },
     {
       icon: <Wrench className="h-6 w-6" />,
-      title: "Skilled Mistris",
-      desc: "Experienced local plumbers & electricians",
+      title: "Skilled Professionals",
+      desc: "Experienced local electricians and plumbers",
     },
     {
       icon: <Star className="h-6 w-6" />,
       title: "Trusted Locally",
-      desc: "Built for the people of Muzaffarpur",
+      desc: "Built for North Bihar homes",
     },
   ];
 
@@ -40,10 +40,10 @@ export default function TrustBadges() {
       <div className="mx-auto max-w-6xl px-4">
         <div className="text-center">
           <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
-            Why {siteConfig.brandName}?
+            Why {BRAND.displayName}?
           </h3>
           <p className="mt-2 text-sm text-slate-500">
-            We're not just a service — we're your neighbour's recommendation.
+            Verified experts, transparent pricing, and workmanship you can count on.
           </p>
         </div>
         <div className="mt-8 grid grid-cols-2 lg:grid-cols-3 gap-4">

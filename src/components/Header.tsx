@@ -1,5 +1,5 @@
 import { Wrench, Phone, MessageCircle, UserPlus } from "lucide-react";
-import { siteConfig } from "@/config/siteConfig";
+import { BRAND } from "@/constants/brand";
 
 interface HeaderProps {
   onBookClick: () => void;
@@ -7,8 +7,8 @@ interface HeaderProps {
 }
 
 export default function Header({ onJoinClick }: HeaderProps) {
-  const waLink = `https://wa.me/${siteConfig.whatsappNumber}?text=${encodeURIComponent(
-    "Hi MistriBabu! I want to know more about your services."
+  const waLink = `https://wa.me/${BRAND.whatsappNumber}?text=${encodeURIComponent(
+    `Hi ${BRAND.displayName}! I want to know more about your services.`
   )}`;
 
   return (
@@ -20,17 +20,17 @@ export default function Header({ onJoinClick }: HeaderProps) {
           </div>
           <div className="min-w-0">
             <h1 className="text-lg font-bold text-white leading-tight tracking-tight">
-              {siteConfig.brandName}
+              {BRAND.displayName}
             </h1>
             <p className="text-[10px] text-blue-300 leading-none truncate">
-              {siteConfig.city} • 60 min service
+              {BRAND.region}
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
           <a
-            href={`tel:${siteConfig.callingNumber}`}
+            href={`tel:${BRAND.callingNumber}`}
             className="hidden sm:flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-blue-500 active:scale-95"
           >
             <Phone className="h-4 w-4" />
@@ -50,7 +50,7 @@ export default function Header({ onJoinClick }: HeaderProps) {
             className="flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-2 text-sm font-semibold text-white ring-1 ring-white/15 transition hover:bg-white/20 active:scale-95"
           >
             <UserPlus className="h-4 w-4" />
-            <span className="hidden xs:inline sm:inline">Mistri Banein</span>
+            <span className="hidden xs:inline sm:inline">Join Quick Mistri</span>
           </button>
         </div>
       </div>

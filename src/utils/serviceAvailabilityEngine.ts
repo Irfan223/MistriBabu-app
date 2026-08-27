@@ -81,7 +81,7 @@ export async function checkServiceAvailability(targetPincode: string, trade?: Tr
       district: location.district,
       hubName: location.meta.hubName,
       eta: "2–3 hours (Extended Transit)",
-      message: `No technician stationed directly at your PIN code, but mistris from within ${location.district} can arrive with extended travel time.`,
+      message: `No technician stationed directly at your PIN code, but verified experts from within ${location.district} can arrive with extended travel time.`,
       canBook: true,
       technicianCount: counts.district_count,
       exactTechnicianCount: counts.exact_count,

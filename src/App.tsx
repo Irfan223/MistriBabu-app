@@ -12,7 +12,7 @@ import TechnicianRegistration from "@/components/TechnicianRegistration";
 import AdminDashboard from "@/components/AdminDashboard";
 import AdminLoginModal from "@/components/AdminLoginModal";
 import { supabase } from "@/lib/supabase";
-import { siteConfig } from "@/config/siteConfig";
+import { BRAND } from "@/constants/brand";
 
 export default function App() {
   const [route, setRoute] = useState(window.location.hash);
@@ -100,15 +100,15 @@ export default function App() {
 
       <footer className="bg-slate-900 py-8 text-center">
         <div className="mx-auto max-w-6xl px-4">
-          <p className="text-sm font-bold text-white">{siteConfig.brandName}</p>
-          <p className="mt-1 text-xs text-blue-300">{siteConfig.tagline}</p>
+          <p className="text-sm font-bold text-white">{BRAND.displayName}</p>
+          <p className="mt-1 text-xs text-blue-300">{BRAND.taglines.primary}</p>
           <div className="mt-4 flex flex-wrap items-center justify-center gap-4 text-xs text-blue-300">
-            <a href={`tel:${siteConfig.callingNumber}`} className="hover:text-white">
-              Call: {siteConfig.callingNumber}
+            <a href={`tel:${BRAND.callingNumber}`} className="hover:text-white">
+              Call: {BRAND.supportPhone}
             </a>
             <span className="text-slate-600">|</span>
             <a
-              href={`https://wa.me/${siteConfig.whatsappNumber}`}
+              href={`https://wa.me/${BRAND.whatsappNumber}`}
               target="_blank"
               rel="noopener noreferrer"
               className="hover:text-white"
@@ -125,7 +125,7 @@ export default function App() {
             </button>
           </div>
           <p className="mt-4 text-xs text-slate-500">
-            © {new Date().getFullYear()} {siteConfig.brandName}. Made for {siteConfig.city}, Bihar.
+            © 2026 {BRAND.displayName}. Proudly serving Muzaffarpur, Sitamarhi &amp; Sheohar, Bihar.
           </p>
         </div>
       </footer>
