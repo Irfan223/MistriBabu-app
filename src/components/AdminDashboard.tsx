@@ -26,12 +26,12 @@ interface Booking {
   problem_description: string | null;
   preferred_slot: string;
   status: string;
-  assigned_technician_id: number | null;
+  assigned_technician_id: string | null;
   created_at: string;
 }
 
 interface Technician {
-  id: number;
+  id: string;
   full_name: string;
   phone: string;
   trade: string;
@@ -41,6 +41,10 @@ interface Technician {
   is_verified: boolean;
   status: string;
   created_at: string;
+  service_district: string;
+  service_pincode: string | null;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 export default function AdminDashboard({ email, onBack }: AdminDashboardProps) {
@@ -52,7 +56,7 @@ export default function AdminDashboard({ email, onBack }: AdminDashboardProps) {
   const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [updatingId, setUpdatingId] = useState<number | null>(null);
+  const [updatingId, setUpdatingId] = useState<number | string | null>(null);
   const { toasts, showToast, dismiss } = useToast();
 
   const fetchData = useCallback(async () => {
@@ -61,7 +65,7 @@ export default function AdminDashboard({ email, onBack }: AdminDashboardProps) {
     try {
       const [bookingsRes, techRes] = await Promise.all([
         supabase.from("bookings").select("*").order("created_at", { ascending: false }),
-        supabase.from("technicians").select("*").order("created_at", { ascending: false }),
+        supabase.rpc("get_admin_technicians"),
       ]);
       if (bookingsRes.error) throw bookingsRes.error;
       if (techRes.error) throw techRes.error;
@@ -99,7 +103,7 @@ export default function AdminDashboard({ email, onBack }: AdminDashboardProps) {
     }
   };
 
-  const assignTechnician = async (bookingId: number, technicianId: number | null) => {
+  const assignTechnician = async (bookingId: number, technicianId: string | null) => {
     setUpdatingId(bookingId);
     try {
       const updates: Record<string, unknown> = { assigned_technician_id: technicianId };
@@ -132,11 +136,12 @@ export default function AdminDashboard({ email, onBack }: AdminDashboardProps) {
     }
   };
 
-  const updateTechnician = async (id: number, updates: Partial<Pick<Technician, "is_verified" | "status">>) => {
+  const updateTechnician = async (id: string, updates: Partial<Pick<Technician, "is_verified" | "status">>) => {
     setUpdatingId(id);
     try {
-      const { error } = await supabase.from("technicians").update(updates).eq("id", id);
+      const { data, error } = await supabase.from("technicians").update(updates).eq("id", id).select("id");
       if (error) throw error;
+      if (!data || data.length === 0) throw new Error("Technician update was not applied. Check admin permissions.");
       setTechnicians((prev) => prev.map((tech) => tech.id === id ? { ...tech, ...updates } : tech));
       showToast("success", "Technician profile updated.");
     } catch (err) {
@@ -304,12 +309,12 @@ function extractPincode(value: string): string {
 }
 
 function getTechnicianDistrict(technician: Technician): string | null {
-  return technician.operating_areas.match(/District:\s*([^;]+)/i)?.[1]?.trim() ?? null;
+  return technician.service_district || (technician.operating_areas?.match(/District:\s*([^;]+)/i)?.[1]?.trim() ?? null);
 }
 
 function getDispatchGroup(booking: Booking, technician: Technician): "Direct PIN Match (Local - Fastest)" | "District Match (Extended Travel)" | "Cross-District (Scheduled Only)" {
   const bookingPincode = extractPincode(booking.locality);
-  if (bookingPincode && technician.operating_areas.includes(bookingPincode)) return "Direct PIN Match (Local - Fastest)";
+  if (bookingPincode && technician.operating_areas?.includes(bookingPincode)) return "Direct PIN Match (Local - Fastest)";
   const bookingDistrict = getPincodeMeta(bookingPincode)?.district;
   if (bookingDistrict && getTechnicianDistrict(technician) === bookingDistrict) return "District Match (Extended Travel)";
   return "Cross-District (Scheduled Only)";
@@ -340,7 +345,7 @@ function BookingCard({
   technicians: Technician[];
   updating: boolean;
   onStatusChange: (id: number, status: string) => void;
-  onAssignTechnician: (bookingId: number, technicianId: number | null) => void;
+  onAssignTechnician: (bookingId: number, technicianId: string | null) => void;
 }) {
   const statusColor: Record<string, string> = {
     PENDING: "bg-amber-100 text-amber-700",
@@ -411,7 +416,7 @@ function BookingCard({
               value={booking.assigned_technician_id ?? ""}
               onChange={(e) => {
                 const val = e.target.value;
-                onAssignTechnician(booking.id, val === "" ? null : Number(val));
+                onAssignTechnician(booking.id, val === "" ? null : val);
               }}
               disabled={updating}
               className="w-full appearance-none rounded-lg border-0 bg-slate-50 py-2 pl-3 pr-9 text-xs font-semibold text-slate-800 ring-1 ring-slate-200 transition focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
@@ -421,7 +426,7 @@ function BookingCard({
                 const matches = technicians.filter((technician) => getDispatchGroup(booking, technician) === group);
                 if (matches.length === 0) return null;
                 return <optgroup key={group} label={`${group} • ${matches.length} available`}>
-                  {matches.map((technician) => <option key={technician.id} value={technician.id}>{technician.full_name} • {getTechnicianDistrict(technician) ?? "District pending"} • {technician.operating_areas}</option>)}
+                  {matches.map((technician) => <option key={technician.id} value={technician.id}>{technician.full_name} • {getTechnicianDistrict(technician) ?? "District pending"} • {technician.operating_areas ?? `${technician.service_district ?? "Service area pending"} service area`}</option>)}
                 </optgroup>;
               })}
             </select>
@@ -433,7 +438,7 @@ function BookingCard({
   );
 }
 
-function TechCard({ tech, updating, onUpdate, onVerify }: { tech: Technician; updating: boolean; onUpdate: (id: number, updates: Partial<Pick<Technician, "is_verified" | "status">>) => void; onVerify: (tech: Technician) => void }) {
+function TechCard({ tech, updating, onUpdate, onVerify }: { tech: Technician; updating: boolean; onUpdate: (id: string, updates: Partial<Pick<Technician, "is_verified" | "status">>) => void; onVerify: (tech: Technician) => void }) {
   return (
     <div className="rounded-xl bg-white p-4 ring-1 ring-slate-200">
       <div className="flex items-start justify-between gap-3">
@@ -459,7 +464,10 @@ function TechCard({ tech, updating, onUpdate, onVerify }: { tech: Technician; up
             <span>{tech.experience_years} yrs exp</span>
           </div>
           <p className="mt-1.5 flex items-center gap-1 text-xs text-slate-500">
-            <MapPin className="h-3 w-3" />{tech.operating_areas}
+            <MapPin className="h-3 w-3" />Service area: {tech.service_district}{tech.service_pincode ? ` (${tech.service_pincode})` : ""}
+          </p>
+          <p className="mt-1 flex items-center gap-1 text-xs text-slate-500">
+            <MapPin className="h-3 w-3" />Current location: {tech.latitude !== null && tech.longitude !== null ? `${tech.latitude.toFixed(5)}, ${tech.longitude.toFixed(5)}` : "Not provided"}
           </p>
           {tech.aadhaar_number && (
             <p className="mt-1 text-xs text-slate-400">Aadhaar: ••••••{tech.aadhaar_number.slice(-4)}</p>

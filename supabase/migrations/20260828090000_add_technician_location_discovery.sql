@@ -38,6 +38,7 @@ create table public.technicians (
   name text not null check (length(trim(name)) > 0),
   phone text not null unique check (phone ~ '^[6-9][0-9]{9}$'),
   trade text not null check (length(trim(trade)) > 0),
+  aadhaar_number text,
   service_district text not null check (service_district in ('Muzaffarpur', 'Sitamarhi', 'Sheohar', 'Motihari')),
   service_radius_km integer not null default 10 check (service_radius_km > 0),
   is_active boolean not null default true,

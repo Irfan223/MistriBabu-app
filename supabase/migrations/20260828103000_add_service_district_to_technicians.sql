@@ -11,5 +11,8 @@ alter table public.technicians
   alter column service_district set not null;
 
 alter table public.technicians
+  drop constraint if exists technicians_service_district_check;
+
+alter table public.technicians
   add constraint technicians_service_district_check
   check (service_district in ('Muzaffarpur', 'Sitamarhi', 'Sheohar', 'Motihari'));

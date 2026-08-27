@@ -8,7 +8,7 @@ export const BRAND = {
   supportPhone: "+91 89105 41678",
   whatsappNumber: "918910541678",
   callingNumber: "+918910541678",
-  region: "Muzaffarpur • Sitamarhi • Sheohar",
+  region: "Muzaffarpur • Sitamarhi • Sheohar • Motihari",
 
   taglines: {
     primary: "Ghar Ke Har Kaam Ka Bharosemand Hal",
@@ -59,7 +59,7 @@ export const BRAND = {
   },
 
   hero: {
-    regionLabel: "Serving Muzaffarpur • Sitamarhi • Sheohar",
+    regionLabel: "Serving Muzaffarpur • Sitamarhi • Sheohar • Motihari",
     title: "Expert Home Services at Your Doorstep",
     subtitle: "Verified local experts at fixed pricing. Rapid doorstep repair across North Bihar.",
     responseTime: "Average response time: under 60 minutes",

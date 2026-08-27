@@ -128,7 +128,7 @@ export default function App() {
             </button>
           </div>
           <p className="mt-4 text-xs text-slate-500">
-            © 2026 {BRAND.displayName}. Proudly serving Muzaffarpur, Sitamarhi &amp; Sheohar, Bihar.
+            © 2026 {BRAND.displayName}. Proudly serving Muzaffarpur, Sitamarhi, Sheohar &amp; Motihari, Bihar.
           </p>
         </div>
       </footer>
