@@ -11,6 +11,7 @@ import ConfirmationModal from "@/components/ConfirmationModal";
 import TechnicianRegistration from "@/components/TechnicianRegistration";
 import AdminDashboard from "@/components/AdminDashboard";
 import AdminLoginModal from "@/components/AdminLoginModal";
+import InstallPromptBanner from "@/components/InstallPromptBanner";
 import { supabase } from "@/lib/supabase";
 import { BRAND } from "@/constants/brand";
 
@@ -131,6 +132,7 @@ export default function App() {
       </footer>
 
       <StickyBar />
+      <InstallPromptBanner />
       <ConfirmationModal
         open={confirmOpen}
         bookingId={bookingId}
