@@ -77,12 +77,13 @@ export default function NearbyMistriDiscovery({
     let cancelled = false;
     setLoading(true);
     setError(null);
-    supabase
-      .rpc("get_nearby_worker_summary", {
+    Promise.resolve(
+      supabase.rpc("get_nearby_worker_summary", {
         customer_lat: pincodeData.latitude,
         customer_lng: pincodeData.longitude,
         radius_in_km: radius,
-      })
+      }),
+    )
       .then(({ data, error: rpcError }) => {
         if (cancelled) return;
         if (rpcError) throw rpcError;
