@@ -127,7 +127,7 @@ export const SERVICE_CATALOG = {
       desc: "Overhead tank cleaning & drain blockage",
     },
   ],
-  AC: [
+  "AC Technician": [
     {
       name: "AC Service & Cleaning",
       price: "From ₹499",

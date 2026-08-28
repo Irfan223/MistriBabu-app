@@ -7,7 +7,9 @@ interface ServiceCatalogProps {
 }
 
 export default function ServiceCatalog({ onBookService }: ServiceCatalogProps) {
-  const [activeTab, setActiveTab] = useState<"Electrician" | "Plumber" | "AC" | "Painter">("Electrician");
+  const [activeTab, setActiveTab] = useState<
+    "Electrician" | "Plumber" | "AC Technician" | "Painter"
+  >("Electrician");
 
   const services = SERVICE_CATALOG[activeTab];
 
@@ -38,8 +40,8 @@ export default function ServiceCatalog({ onBookService }: ServiceCatalogProps) {
               label="Plumber"
             />
             <TabButton
-              active={activeTab === "AC"}
-              onClick={() => setActiveTab("AC")}
+              active={activeTab === "AC Technician"}
+              onClick={() => setActiveTab("AC Technician")}
               icon={<AirVent className="h-4 w-4" />}
               label="AC"
             />
@@ -63,7 +65,7 @@ export default function ServiceCatalog({ onBookService }: ServiceCatalogProps) {
                   <Zap className="h-5 w-5" />
                 ) : activeTab === "Plumber" ? (
                   <Droplets className="h-5 w-5" />
-                ) : activeTab === "AC" ? (
+                ) : activeTab === "AC Technician" ? (
                   <AirVent className="h-5 w-5" />
                 ) : (
                   <Paintbrush className="h-5 w-5" />
