@@ -6,6 +6,7 @@ import {
   Droplets,
   AirVent,
   Paintbrush,
+  Hammer,
   Phone,
   MapPin,
   Clock,
@@ -22,6 +23,7 @@ import { supabase } from "@/lib/supabase";
 import { BRAND } from "@/constants/brand";
 import { useToast } from "@/hooks/useToast";
 import Toast from "@/components/Toast";
+import AdminPincodeManager from "@/components/AdminPincodeManager";
 const SUPPORTED_DISTRICTS = [
   "Muzaffarpur",
   "Sitamarhi",
@@ -81,7 +83,7 @@ interface Technician {
 }
 
 export default function AdminDashboard({ email, onBack }: AdminDashboardProps) {
-  const [tab, setTab] = useState<"bookings" | "technicians">("bookings");
+  const [tab, setTab] = useState<"bookings" | "technicians" | "pincodes">("bookings");
   const [statusFilter, setStatusFilter] = useState<BookingStatus>("ALL");
   const [search, setSearch] = useState("");
   const [districtFilter, setDistrictFilter] = useState<DistrictFilter>("All");
@@ -330,6 +332,12 @@ export default function AdminDashboard({ email, onBack }: AdminDashboardProps) {
             icon={<UserCheck className="h-4 w-4" />}
             label={`Technicians (${technicians.length})`}
           />
+          <TabBtn
+            active={tab === "pincodes"}
+            onClick={() => setTab("pincodes")}
+            icon={<MapPin className="h-4 w-4" />}
+            label="Add Pincodes"
+          />
         </div>
 
         <div className="mb-5 flex flex-wrap gap-2">
@@ -356,6 +364,8 @@ export default function AdminDashboard({ email, onBack }: AdminDashboardProps) {
           <div className="flex items-center justify-center py-16">
             <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
           </div>
+        ) : tab === "pincodes" ? (
+          <AdminPincodeManager />
         ) : tab === "bookings" ? (
           <>
             <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
