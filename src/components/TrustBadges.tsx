@@ -50,9 +50,9 @@ export default function TrustBadges() {
           {badges.map((b) => (
             <div
               key={b.title}
-              className="flex flex-col items-center rounded-2xl bg-slate-50 p-5 text-center ring-1 ring-slate-200 transition hover:ring-blue-300"
+              className="flex flex-col items-center rounded-2xl bg-slate-50 p-5 text-center ring-1 ring-slate-200 transition hover:ring-brand-300"
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-600 text-white shadow-md">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-600 text-white shadow-md">
                 {b.icon}
               </div>
               <h4 className="mt-3 text-sm font-bold text-slate-900">{b.title}</h4>

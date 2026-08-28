@@ -32,6 +32,25 @@ const TRADE_ICONS: Record<string, React.ReactNode> = {
   "AC Technician": <AirVent className="h-5 w-5" />,
 };
 
+// India Post often returns "NA"/blank for block; skip those and never repeat the same text twice.
+function formatPincodeLocation(data: ServiceablePincode): string {
+  const isUsable = (value: string | null | undefined) =>
+    Boolean(value && value.trim() && value.trim().toUpperCase() !== "NA");
+
+  const candidates = [data.block, data.areaNames[0], data.district].filter(
+    isUsable,
+  ) as string[];
+
+  const unique = candidates.filter(
+    (value, index) =>
+      candidates.findIndex(
+        (other) => other.trim().toLowerCase() === value.trim().toLowerCase(),
+      ) === index,
+  );
+
+  return unique.slice(0, 2).join(", ") || data.district;
+}
+
 export default function NearbyMistriDiscovery({
   onBook,
 }: NearbyMistriDiscoveryProps) {
@@ -134,8 +153,7 @@ export default function NearbyMistriDiscovery({
             )}
             {pincodeData && (
               <p className="mt-1 text-center text-xs font-semibold text-green-700">
-                {pincodeData.block ?? pincodeData.areaNames[0]},{" "}
-                {pincodeData.district}
+                {formatPincodeLocation(pincodeData)}
               </p>
             )}
             {pincode.length === 6 && !pincodeLoading && !pincodeData && (

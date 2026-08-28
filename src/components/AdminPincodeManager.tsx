@@ -90,7 +90,7 @@ export default function AdminPincodeManager() {
           type="button"
           onClick={fetchPincode}
           disabled={fetching}
-          className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
+          className="flex items-center gap-1.5 rounded-lg bg-brand-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
         >
           {fetching && <Loader2 className="h-4 w-4 animate-spin" />}
           Fetch

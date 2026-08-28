@@ -60,7 +60,7 @@ export default function AdminLoginModal({ open, onClose, onAuthorized }: AdminLo
       <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl ring-1 ring-slate-200 animate-in">
         <div className="flex items-start justify-between">
           <div>
-            <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600 text-white">
+            <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-brand-600 text-white">
               <LockKeyhole className="h-5 w-5" />
             </div>
             <h2 className="text-xl font-extrabold text-slate-900">Admin Portal</h2>
@@ -80,7 +80,7 @@ export default function AdminLoginModal({ open, onClose, onAuthorized }: AdminLo
             Password
             <input className="form-input mt-1.5" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Enter password" />
           </label>
-          <button type="submit" disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-blue-700 disabled:opacity-60">
+          <button type="submit" disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-brand-700 disabled:opacity-60">
             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
             {loading ? "Verifying access..." : "Sign In"}
           </button>
