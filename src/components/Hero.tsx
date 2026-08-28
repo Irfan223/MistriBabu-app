@@ -7,10 +7,10 @@ interface HeroProps {
 
 export default function Hero({ onBookClick }: HeroProps) {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-slate-950 via-slate-900 to-blue-950">
+    <section className="relative overflow-hidden bg-gradient-to-b from-slate-950 via-slate-900 to-brand-950">
       <div className="absolute inset-0 opacity-20">
         <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-orange-500 blur-3xl" />
-        <div className="absolute -bottom-32 -left-20 h-72 w-72 rounded-full bg-blue-600 blur-3xl" />
+        <div className="absolute -bottom-32 -left-20 h-72 w-72 rounded-full bg-brand-600 blur-3xl" />
       </div>
 
       <div className="relative mx-auto max-w-6xl px-4 py-10 sm:py-16">
@@ -40,7 +40,7 @@ export default function Hero({ onBookClick }: HeroProps) {
             {BRAND.serviceCopy.bookingButton}
           </button>
 
-          <div className="mt-5 flex items-center gap-2 text-xs text-blue-300">
+          <div className="mt-5 flex items-center gap-2 text-xs text-brand-300">
             <Clock className="h-4 w-4" />
             <span>{BRAND.hero.responseTime}</span>
           </div>

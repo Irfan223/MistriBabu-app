@@ -14,7 +14,7 @@ export default function Header({ onBookClick, onJoinClick }: HeaderProps) {
   )}`;
 
   return (
-    <header className="sticky top-0 z-40 bg-slate-950/95 backdrop-blur-md border-b border-blue-900/40 shadow-lg">
+    <header className="sticky top-0 z-40 bg-slate-950/95 backdrop-blur-md border-b border-brand-900/40 shadow-lg">
       <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5 min-w-0">
           <div className="flex h-10 w-16 shrink-0 items-center justify-center rounded-xl bg-white shadow-md ring-1 ring-orange-400/30">
@@ -24,7 +24,7 @@ export default function Header({ onBookClick, onJoinClick }: HeaderProps) {
             <h1 className="text-lg font-bold text-white leading-tight tracking-tight">
               {BRAND.displayName}
             </h1>
-            <p className="text-[10px] text-blue-300 leading-none truncate">
+            <p className="text-[10px] text-brand-300 leading-none truncate">
               {BRAND.region}
             </p>
           </div>
@@ -49,7 +49,7 @@ export default function Header({ onBookClick, onJoinClick }: HeaderProps) {
           </a>
           <button
             onClick={onJoinClick}
-            className="flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-2 text-sm font-semibold text-white ring-1 ring-white/15 transition hover:bg-white/20 active:scale-95"
+            className="flex items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-2 text-sm font-semibold text-white ring-1 ring-brand-400/40 transition hover:bg-brand-500 active:scale-95"
           >
             <UserPlus className="h-4 w-4" />
             <span className="hidden xs:inline sm:inline">Join Quick Mistri</span>
@@ -80,7 +80,7 @@ export default function Header({ onBookClick, onJoinClick }: HeaderProps) {
       </div>
 
       {menuOpen && (
-        <div id="mobile-menu" className="border-t border-blue-900/40 bg-slate-950 px-4 py-3 sm:hidden">
+        <div id="mobile-menu" className="border-t border-brand-900/40 bg-slate-950 px-4 py-3 sm:hidden">
           <div className="mx-auto flex max-w-6xl flex-col gap-2">
             <button
               type="button"

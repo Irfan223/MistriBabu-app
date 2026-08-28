@@ -52,6 +52,11 @@ const TIME_RANGES = [
 
 // Helper for min date calculation (YYYY-MM-DD)
 const getTodayDateString = () => new Date().toISOString().split("T")[0];
+const getTomorrowDateString = () => {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  return d.toISOString().split("T")[0];
+};
 
 const emptyForm: FormState = {
   customer_name: "",
@@ -146,10 +151,14 @@ const BookingForm = forwardRef<HTMLDivElement, BookingFormProps>(
       return { valid: true, helper: "Valid mobile number" };
     };
 
+    const getEffectiveDate = (): string => {
+      if (form.slot_type === "Today") return getTodayDateString();
+      if (form.slot_type === "Tomorrow") return getTomorrowDateString();
+      return form.specific_date;
+    };
+
     const getComputedSlot = (): string => {
-      if (form.slot_type === "Today") return "Today (ASAP)";
-      if (form.slot_type === "Tomorrow") return "Tomorrow";
-      return `${form.specific_date} (${form.specific_time_range})`;
+      return `${getEffectiveDate()} (${form.specific_time_range})`;
     };
 
     const validate = (): boolean => {
@@ -166,11 +175,10 @@ const BookingForm = forwardRef<HTMLDivElement, BookingFormProps>(
       if (!form.sub_service.trim())
         e.sub_service = "Describe the service needed";
 
-      if (form.slot_type === "Specific Time") {
-        if (!form.specific_date) e.specific_date = "Please pick a date";
-        if (!form.specific_time_range)
-          e.specific_time_range = "Please select a time range";
-      }
+      if (form.slot_type === "Specific Time" && !form.specific_date)
+        e.specific_date = "Please pick a date";
+      if (!form.specific_time_range)
+        e.specific_time_range = "Please select a time range";
 
       setErrors(e);
       return Object.keys(e).length === 0;
@@ -218,11 +226,11 @@ const BookingForm = forwardRef<HTMLDivElement, BookingFormProps>(
             preferred_slot: finalSlot,
             status: "PENDING",
           })
-          .select("id")
+          .select("booking_number")
           .single();
 
         if (error) throw error;
-        const bookingId = `MB-${data.id}`;
+        const bookingId = data.booking_number;
         showToast(
           "success",
           `Booking ${bookingId} confirmed! Opening WhatsApp...`,
@@ -441,7 +449,7 @@ const BookingForm = forwardRef<HTMLDivElement, BookingFormProps>(
                   }
                   className="form-input"
                 >
-                  <option value="Today">Today (ASAP)</option>
+                  <option value="Today">Today</option>
                   <option value="Tomorrow">Tomorrow</option>
                   <option value="Specific Time">
                     Pick a specific date & time
@@ -449,12 +457,12 @@ const BookingForm = forwardRef<HTMLDivElement, BookingFormProps>(
                 </select>
               </Field>
 
-              {/* Dynamic Calendar & Time Range Section */}
-              {form.slot_type === "Specific Time" && (
-                <div className="space-y-4 rounded-xl border border-blue-200 bg-blue-50/50 p-4 transition-all">
+              {/* Calendar & Time Range Section */}
+              <div className="space-y-4 rounded-xl border border-brand-200 bg-brand-50/50 p-4 transition-all">
+                {form.slot_type === "Specific Time" && (
                   <Field
                     label="Select Date"
-                    icon={<Calendar className="h-4 w-4 text-blue-600" />}
+                    icon={<Calendar className="h-4 w-4 text-brand-600" />}
                     error={errors.specific_date}
                   >
                     <input
@@ -467,39 +475,39 @@ const BookingForm = forwardRef<HTMLDivElement, BookingFormProps>(
                       className="form-input bg-white"
                     />
                   </Field>
+                )}
 
-                  <Field
-                    label="Select Time Range"
-                    icon={<Clock className="h-4 w-4 text-blue-600" />}
-                    error={errors.specific_time_range}
-                  >
-                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                      {TIME_RANGES.map((slot) => {
-                        const isSelected = form.specific_time_range === slot;
-                        return (
-                          <button
-                            key={slot}
-                            type="button"
-                            onClick={() =>
-                              handleChange("specific_time_range", slot)
-                            }
-                            className={`flex items-center justify-between rounded-lg px-3.5 py-2.5 text-xs font-semibold transition ${
-                              isSelected
-                                ? "border-2 border-blue-600 bg-blue-600 text-white shadow-sm"
-                                : "border border-slate-200 bg-white text-slate-700 hover:border-blue-300"
-                            }`}
-                          >
-                            <span>{slot}</span>
-                            {isSelected && (
-                              <CheckCircle2 className="h-4 w-4 shrink-0 text-white" />
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </Field>
-                </div>
-              )}
+                <Field
+                  label="Select Time Range"
+                  icon={<Clock className="h-4 w-4 text-brand-600" />}
+                  error={errors.specific_time_range}
+                >
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    {TIME_RANGES.map((slot) => {
+                      const isSelected = form.specific_time_range === slot;
+                      return (
+                        <button
+                          key={slot}
+                          type="button"
+                          onClick={() =>
+                            handleChange("specific_time_range", slot)
+                          }
+                          className={`flex items-center justify-between rounded-lg px-3.5 py-2.5 text-xs font-semibold transition ${
+                            isSelected
+                              ? "border-2 border-brand-600 bg-brand-600 text-white shadow-sm"
+                              : "border border-slate-200 bg-white text-slate-700 hover:border-brand-300"
+                          }`}
+                        >
+                          <span>{slot}</span>
+                          {isSelected && (
+                            <CheckCircle2 className="h-4 w-4 shrink-0 text-white" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </Field>
+              </div>
             </div>
 
             <Field
@@ -584,7 +592,7 @@ function Field({
         <p className="mt-1 text-xs font-medium text-red-600">{error}</p>
       ) : helper ? (
         <p
-          className={`mt-1 text-xs ${helperValid ? "text-blue-600" : "text-slate-400"}`}
+          className={`mt-1 text-xs ${helperValid ? "text-brand-600" : "text-slate-400"}`}
         >
           {helper}
         </p>
@@ -610,7 +618,7 @@ function CategoryPill({
       onClick={onClick}
       className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2.5 text-sm font-semibold transition ${
         active
-          ? "bg-blue-600 text-white shadow-sm"
+          ? "bg-brand-600 text-white shadow-sm"
           : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-100"
       }`}
     >

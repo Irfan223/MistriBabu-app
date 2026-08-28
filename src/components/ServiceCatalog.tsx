@@ -58,9 +58,9 @@ export default function ServiceCatalog({ onBookService }: ServiceCatalogProps) {
           {services.map((svc) => (
             <div
               key={svc.name}
-              className="group flex flex-col rounded-2xl bg-white p-5 ring-1 ring-slate-200 transition hover:ring-blue-400 hover:shadow-lg"
+              className="group flex flex-col rounded-2xl bg-white p-5 ring-1 ring-slate-200 transition hover:ring-brand-400 hover:shadow-lg"
             >
-              <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+              <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
                 {activeTab === "Electrician" ? (
                   <Zap className="h-5 w-5" />
                 ) : activeTab === "Plumber" ? (
@@ -82,7 +82,7 @@ export default function ServiceCatalog({ onBookService }: ServiceCatalogProps) {
               </p>
               <button
                 onClick={() => onBookService(activeTab, svc.name)}
-                className="mt-4 flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-500 active:scale-95"
+                className="mt-4 flex items-center justify-center gap-1.5 rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-500 active:scale-95"
               >
                 Book Now
                 <ArrowRight className="h-4 w-4" />
@@ -112,11 +112,11 @@ function TabButton({
       onClick={onClick}
       className={`flex items-center justify-center gap-2 whitespace-nowrap rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-150 ${
         active
-          ? "bg-white text-[#2563EB] shadow-sm"
+          ? "bg-white text-brand-600 shadow-sm"
           : "text-slate-600 hover:text-slate-900 hover:bg-white/40"
       }`}
     >
-      <span className={active ? "text-[#2563EB]" : "text-slate-500"}>
+      <span className={active ? "text-brand-600" : "text-slate-500"}>
         {icon}
       </span>
       <span>{label}</span>

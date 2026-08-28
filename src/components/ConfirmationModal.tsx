@@ -40,11 +40,11 @@ export default function ConfirmationModal({
           We've received your request. Our team will call you shortly.
         </p>
 
-        <div className="mt-4 rounded-xl bg-blue-50 p-4 text-center ring-1 ring-blue-100">
-          <p className="text-xs font-semibold uppercase tracking-wide text-blue-500">
+        <div className="mt-4 rounded-xl bg-brand-50 p-4 text-center ring-1 ring-brand-100">
+          <p className="text-xs font-semibold uppercase tracking-wide text-brand-500">
             Your Booking ID
           </p>
-          <p className="mt-1 text-2xl font-extrabold text-blue-700">
+          <p className="mt-1 text-2xl font-extrabold text-brand-700">
             {bookingId}
           </p>
         </div>
@@ -56,7 +56,7 @@ export default function ConfirmationModal({
         <div className="mt-5 flex gap-3">
           <a
             href={`tel:${BRAND.callingNumber}`}
-            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-blue-600 py-3 text-sm font-semibold text-white transition hover:bg-blue-500"
+            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-brand-600 py-3 text-sm font-semibold text-white transition hover:bg-brand-500"
           >
             <Phone className="h-4 w-4" />
             Call Us

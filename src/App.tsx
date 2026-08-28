@@ -104,8 +104,8 @@ export default function App() {
       <footer className="bg-slate-900 py-8 text-center">
         <div className="mx-auto max-w-6xl px-4">
           <p className="text-sm font-bold text-white">{BRAND.displayName}</p>
-          <p className="mt-1 text-xs text-blue-300">{BRAND.taglines.primary}</p>
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-4 text-xs text-blue-300">
+          <p className="mt-1 text-xs text-brand-300">{BRAND.taglines.primary}</p>
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-4 text-xs text-brand-300">
             <a href={`tel:${BRAND.callingNumber}`} className="hover:text-white">
               Call: {BRAND.supportPhone}
             </a>
