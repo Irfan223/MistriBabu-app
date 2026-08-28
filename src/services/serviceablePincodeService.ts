@@ -3,51 +3,32 @@ import { supabase } from "@/lib/supabase";
 export interface ServiceablePincode {
   pincode: string;
   district: "Muzaffarpur" | "Sitamarhi" | "Sheohar" | "Motihari";
-  postOffice: string | null;
+  areaNames: string[];
   block: string | null;
-  latitude: number | null;
-  longitude: number | null;
+  latitude: number;
+  longitude: number;
 }
 
 export async function getServiceablePincode(pincode: string): Promise<ServiceablePincode | null> {
   const normalized = pincode.trim();
   if (!/^\d{6}$/.test(normalized)) return null;
 
-  const { data: serviceable, error: serviceableError } = await supabase
+  const { data, error } = await supabase
     .from("serviceable_pincodes")
-    .select("pincode")
+    .select("pincode, district, area_names, block, latitude, longitude")
     .eq("pincode", normalized)
     .eq("enabled", true)
     .maybeSingle();
 
-  if (serviceableError) throw serviceableError;
-  if (!serviceable) return null;
-
-  const { data: postal, error: postalError } = await supabase
-    .from("postal_pincodes")
-    .select("pincode, district")
-    .eq("pincode", normalized)
-    .maybeSingle();
-  if (postalError) throw postalError;
-  if (!postal) return null;
-
-  const { data: office, error: officeError } = await supabase
-    .from("post_offices")
-    .select("name, block, latitude, longitude")
-    .eq("pincode", normalized)
-    .not("latitude", "is", null)
-    .not("longitude", "is", null)
-    .order("name")
-    .limit(1)
-    .maybeSingle();
-  if (officeError) throw officeError;
+  if (error) throw error;
+  if (!data) return null;
 
   return {
-    pincode: postal.pincode,
-    district: postal.district as ServiceablePincode["district"],
-    postOffice: office?.name ?? null,
-    block: office?.block ?? null,
-    latitude: office?.latitude ?? null,
-    longitude: office?.longitude ?? null,
+    pincode: data.pincode,
+    district: data.district as ServiceablePincode["district"],
+    areaNames: data.area_names ? data.area_names.split("|").map((s: string) => s.trim()).filter(Boolean) : [],
+    block: data.block ?? null,
+    latitude: data.latitude,
+    longitude: data.longitude,
   };
 }
