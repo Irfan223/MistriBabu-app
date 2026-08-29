@@ -6,6 +6,7 @@ import {
   X,
   LogIn,
   Lock,
+  ShoppingBag,
 } from "lucide-react";
 import { useState } from "react";
 import { BRAND } from "@/constants/brand";
@@ -14,12 +15,14 @@ interface HeaderProps {
   onBookClick: () => void;
   onJoinClick: () => void;
   onTechLoginClick: () => void;
+  onOrdersClick: () => void;
 }
 
 export default function Header({
   onBookClick,
   onJoinClick,
   onTechLoginClick,
+  onOrdersClick,
 }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const waLink = `https://wa.me/${BRAND.whatsappNumber}?text=${encodeURIComponent(
@@ -74,13 +77,12 @@ export default function Header({
               Join Quick Mistri
             </span>
           </button>
-          {/* Subtle login — less prominent than customer CTAs */}
           <button
-            onClick={onTechLoginClick}
+            onClick={onOrdersClick}
             className="flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-2 text-sm font-semibold text-slate-300 ring-1 ring-white/10 transition hover:bg-white/20 hover:text-white active:scale-95"
           >
-            <LogIn className="h-4 w-4" />
-            <span>Login</span>
+            <ShoppingBag className="h-4 w-4" />
+            <span>My Orders</span>
           </button>
         </div>
 
@@ -150,6 +152,17 @@ export default function Header({
 
             {/* Internal logins — subtle, at the bottom */}
             <div className="mt-1 border-t border-white/10 pt-2 flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  onOrdersClick();
+                  setMenuOpen(false);
+                }}
+                className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-white/5 px-3 py-2.5 text-xs font-semibold text-slate-300 ring-1 ring-white/10 hover:bg-white/10"
+              >
+                <ShoppingBag className="h-3.5 w-3.5" />
+                My Orders
+              </button>
               <button
                 type="button"
                 onClick={() => {

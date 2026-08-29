@@ -11,14 +11,14 @@ async function hashOtp(otp: string): Promise<string> {
     return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-// Deterministic fake email per phone — never used for actual email delivery
-const techEmail = (phone: string) => `tech.${phone}@internal.quickmistri`;
+const techEmail = (phone: string, type = "technician") =>
+    `${type === "customer" ? "cust" : "tech"}.${phone}@internal.quickmistri`;
 
 serve(async (req) => {
     if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
 
     try {
-        const { phone, otp } = await req.json();
+        const { phone, otp, type = "technician" } = await req.json();
         if (!phone || !otp) {
             return new Response(JSON.stringify({ error: "phone and otp are required" }), {
                 status: 200, headers: { ...CORS, "Content-Type": "application/json" },
@@ -57,7 +57,7 @@ serve(async (req) => {
         // Consume the OTP immediately to prevent replay attacks
         await supabase.from("otp_verifications").update({ used: true }).eq("id", record.id);
 
-        const email = techEmail(phone);
+        const email = techEmail(phone, type);
 
         // Get or create a Supabase auth user for this technician
         const { data: listData } = await supabase.auth.admin.listUsers();
@@ -70,18 +70,20 @@ serve(async (req) => {
             const { data: created, error: createErr } = await supabase.auth.admin.createUser({
                 email,
                 email_confirm: true,
-                user_metadata: { phone, role: "technician" },
+                user_metadata: { phone, role: type },
             });
             if (createErr || !created?.user) throw createErr ?? new Error("Failed to create auth user");
             userId = created.user.id;
         }
 
-        // Link auth user to technician row on first login
-        await supabase
-            .from("technicians")
-            .update({ user_id: userId })
-            .eq("phone", phone)
-            .is("user_id", null);
+        // Only link technician rows — customers have no separate profile row
+        if (type === "technician") {
+            await supabase
+                .from("technicians")
+                .update({ user_id: userId })
+                .eq("phone", phone)
+                .is("user_id", null);
+        }
 
         // Generate a magic link token the client uses to establish a real Supabase session
         const { data: linkData, error: linkErr } = await supabase.auth.admin.generateLink({

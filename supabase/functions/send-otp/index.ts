@@ -20,7 +20,7 @@ serve(async (req) => {
     if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
 
     try {
-        const { phone } = await req.json();
+        const { phone, type = "technician" } = await req.json();
         if (!phone || !/^[6-9]\d{9}$/.test(phone)) {
             return new Response(JSON.stringify({ error: "Invalid mobile number" }), {
                 status: 200, headers: { ...CORS, "Content-Type": "application/json" },
@@ -32,17 +32,19 @@ serve(async (req) => {
             Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
         );
 
-        // Verify the phone belongs to a registered technician before sending OTP
-        const { data: tech } = await supabase
-            .from("technicians")
-            .select("id")
-            .eq("phone", phone)
-            .maybeSingle();
+        // Only registered technicians can request a technician OTP
+        if (type === "technician") {
+            const { data: tech } = await supabase
+                .from("technicians")
+                .select("id")
+                .eq("phone", phone)
+                .maybeSingle();
 
-        if (!tech) {
-            return new Response(JSON.stringify({ error: "Mobile number not registered as a technician" }), {
-                status: 200, headers: { ...CORS, "Content-Type": "application/json" },
-            });
+            if (!tech) {
+                return new Response(JSON.stringify({ error: "Mobile number not registered as a technician" }), {
+                    status: 200, headers: { ...CORS, "Content-Type": "application/json" },
+                });
+            }
         }
 
         // Invalidate previous unused OTPs for this phone
