@@ -1,5 +1,5 @@
 ﻿import { FormEvent, useEffect, useState } from "react";
-import { CheckCircle2, Loader2, X } from "lucide-react";
+import { CheckCircle2, Loader2, X, LogIn } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import {
   getServiceablePincode,
@@ -9,6 +9,7 @@ import {
 interface TechnicianRegistrationFormProps {
   open?: boolean;
   onClose?: () => void;
+  onLoginClick?: () => void;
 }
 
 const TRADES = ["Electrician", "Plumber", "AC Technician", "Painter"] as const;
@@ -16,6 +17,7 @@ const TRADES = ["Electrician", "Plumber", "AC Technician", "Painter"] as const;
 export default function TechnicianRegistrationForm({
   open = true,
   onClose,
+  onLoginClick,
 }: TechnicianRegistrationFormProps) {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -270,6 +272,21 @@ export default function TechnicianRegistrationForm({
         {loading && <Loader2 className="h-4 w-4 animate-spin" />}
         Register as Technician
       </button>
+      {onLoginClick && (
+        <p className="text-center text-xs text-slate-500">
+          Already registered?{" "}
+          <button
+            type="button"
+            onClick={() => {
+              onClose?.();
+              onLoginClick();
+            }}
+            className="inline-flex items-center gap-1 font-medium text-orange-600 hover:underline"
+          >
+            <LogIn className="h-3 w-3" /> Login here
+          </button>
+        </p>
+      )}
     </form>
   );
 
