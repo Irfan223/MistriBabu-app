@@ -23,6 +23,8 @@ import {
   CheckCircle2,
   X,
   CalendarClock,
+  IndianRupee,
+  MessageCircle,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { BRAND } from "@/constants/brand";
@@ -85,6 +87,10 @@ interface Booking {
   preferred_slot: string;
   status: string;
   assigned_technician_id: string | null;
+  visiting_charge: number;
+  final_service_charge: number | null;
+  visiting_charge_paid: boolean;
+  service_charge_paid: boolean;
   created_at: string;
 }
 
@@ -106,7 +112,9 @@ interface Technician {
 }
 
 export default function AdminDashboard({ email, onBack }: AdminDashboardProps) {
-  const [tab, setTab] = useState<"bookings" | "technicians" | "pincodes">("bookings");
+  const [tab, setTab] = useState<"bookings" | "technicians" | "pincodes">(
+    "bookings",
+  );
   const [statusFilter, setStatusFilter] = useState<BookingStatus>("ALL");
   const [search, setSearch] = useState("");
   const [districtFilter, setDistrictFilter] = useState<DistrictFilter>("All");
@@ -266,6 +274,50 @@ export default function AdminDashboard({ email, onBack }: AdminDashboardProps) {
       );
     } finally {
       setUpdatingId(null);
+    }
+  };
+
+  const updateCharge = async (
+    id: number,
+    field: "visiting_charge" | "final_service_charge",
+    value: number,
+  ) => {
+    try {
+      const { error } = await supabase
+        .from("bookings")
+        .update({ [field]: value })
+        .eq("id", id);
+      if (error) throw error;
+      setBookings((prev) =>
+        prev.map((b) => (b.id === id ? { ...b, [field]: value } : b)),
+      );
+    } catch (err) {
+      showToast(
+        "error",
+        err instanceof Error ? err.message : "Failed to update charge",
+      );
+    }
+  };
+
+  const togglePaid = async (
+    id: number,
+    field: "visiting_charge_paid" | "service_charge_paid",
+    value: boolean,
+  ) => {
+    try {
+      const { error } = await supabase
+        .from("bookings")
+        .update({ [field]: value })
+        .eq("id", id);
+      if (error) throw error;
+      setBookings((prev) =>
+        prev.map((b) => (b.id === id ? { ...b, [field]: value } : b)),
+      );
+    } catch (err) {
+      showToast(
+        "error",
+        err instanceof Error ? err.message : "Failed to update payment status",
+      );
     }
   };
 
@@ -465,6 +517,8 @@ export default function AdminDashboard({ email, onBack }: AdminDashboardProps) {
                     onStatusChange={updateStatus}
                     onAssignTechnician={assignTechnician}
                     onSlotChange={updateSlot}
+                    onChargeUpdate={updateCharge}
+                    onPaidToggle={togglePaid}
                   />
                 ))}
               </div>
@@ -520,6 +574,30 @@ function extractPincode(value: string): string {
   return value.match(/\b\d{6}\b/)?.[0] ?? "";
 }
 
+function buildAdminWhatsAppReceipt(b: Booking): string {
+  const remaining =
+    b.final_service_charge != null
+      ? Math.max(0, b.final_service_charge - b.visiting_charge)
+      : null;
+  const lines = [
+    `Hi ${b.customer_name}! 🔧`,
+    `Booking: ${b.booking_number}`,
+    `Service: ${b.service_category} — ${b.sub_service}`,
+    `✅ Work completed`,
+    ``,
+    `Visiting charge: ₹${b.visiting_charge}${b.visiting_charge_paid ? " ✓ Paid" : ""}`,
+    b.final_service_charge != null
+      ? `Service charge: ₹${b.final_service_charge}${b.service_charge_paid ? " ✓ Paid" : ""}`
+      : null,
+    remaining != null ? `Balance paid: ₹${remaining}` : null,
+    ``,
+    `Thank you for choosing Quick Mistri! 🙏`,
+  ]
+    .filter(Boolean)
+    .join("\n");
+  return `https://wa.me/${b.customer_phone}?text=${encodeURIComponent(lines)}`;
+}
+
 // Builds readable per-year order numbers (MB2026001, MB2026002, ...) keyed by booking id.
 function getTechnicianDistrict(technician: Technician): string | null {
   return technician.service_district ?? null;
@@ -573,6 +651,8 @@ function BookingCard({
   onStatusChange,
   onAssignTechnician,
   onSlotChange,
+  onChargeUpdate,
+  onPaidToggle,
 }: {
   booking: Booking;
   technicians: Technician[];
@@ -580,6 +660,16 @@ function BookingCard({
   onStatusChange: (id: number, status: string) => void;
   onAssignTechnician: (bookingId: number, technicianId: string | null) => void;
   onSlotChange: (id: number, preferredSlot: string) => void;
+  onChargeUpdate: (
+    id: number,
+    field: "visiting_charge" | "final_service_charge",
+    value: number,
+  ) => void;
+  onPaidToggle: (
+    id: number,
+    field: "visiting_charge_paid" | "service_charge_paid",
+    value: boolean,
+  ) => void;
 }) {
   const [editingSlot, setEditingSlot] = useState(false);
   const [editDate, setEditDate] = useState("");
@@ -641,7 +731,8 @@ function BookingCard({
             </span>
             <span className="flex items-center gap-1">
               <CalendarClock className="h-3 w-3" />
-              Booked: {new Date(booking.created_at).toLocaleString("en-IN", {
+              Booked:{" "}
+              {new Date(booking.created_at).toLocaleString("en-IN", {
                 dateStyle: "medium",
                 timeStyle: "short",
               })}
@@ -816,6 +907,113 @@ function BookingCard({
             <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           </div>
         </div>
+      </div>
+
+      {/* Payment tracking section */}
+      <div className="mt-3 rounded-xl border border-slate-100 bg-slate-50 p-3 space-y-2">
+        <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400 flex items-center gap-1">
+          <IndianRupee className="h-3 w-3" /> Payment
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label className="text-[10px] text-slate-500 font-semibold">
+              Visiting charge (₹)
+            </label>
+            <input
+              type="number"
+              min={0}
+              value={booking.visiting_charge}
+              onChange={(e) =>
+                onChargeUpdate(
+                  booking.id,
+                  "visiting_charge",
+                  Number(e.target.value),
+                )
+              }
+              disabled={updating}
+              className="form-input mt-0.5 py-1.5 text-xs"
+            />
+            <label className="mt-1 flex items-center gap-1.5 text-xs cursor-pointer">
+              <input
+                type="checkbox"
+                checked={booking.visiting_charge_paid}
+                onChange={(e) =>
+                  onPaidToggle(
+                    booking.id,
+                    "visiting_charge_paid",
+                    e.target.checked,
+                  )
+                }
+                disabled={updating}
+                className="rounded"
+              />
+              <span
+                className={
+                  booking.visiting_charge_paid
+                    ? "text-green-700 font-semibold"
+                    : "text-slate-500"
+                }
+              >
+                {booking.visiting_charge_paid ? "✓ Paid" : "Mark paid"}
+              </span>
+            </label>
+          </div>
+          <div>
+            <label className="text-[10px] text-slate-500 font-semibold">
+              Service charge (₹)
+            </label>
+            <input
+              type="number"
+              min={0}
+              value={booking.final_service_charge ?? ""}
+              placeholder="Set on completion"
+              onChange={(e) =>
+                onChargeUpdate(
+                  booking.id,
+                  "final_service_charge",
+                  Number(e.target.value),
+                )
+              }
+              disabled={updating}
+              className="form-input mt-0.5 py-1.5 text-xs"
+            />
+            <label className="mt-1 flex items-center gap-1.5 text-xs cursor-pointer">
+              <input
+                type="checkbox"
+                checked={booking.service_charge_paid}
+                onChange={(e) =>
+                  onPaidToggle(
+                    booking.id,
+                    "service_charge_paid",
+                    e.target.checked,
+                  )
+                }
+                disabled={updating || booking.final_service_charge == null}
+                className="rounded"
+              />
+              <span
+                className={
+                  booking.service_charge_paid
+                    ? "text-green-700 font-semibold"
+                    : "text-slate-500"
+                }
+              >
+                {booking.service_charge_paid ? "✓ Paid" : "Mark paid"}
+              </span>
+            </label>
+          </div>
+        </div>
+        {booking.status === "COMPLETED" && (
+          <a
+            href={buildAdminWhatsAppReceipt(booking)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-1 flex w-full items-center justify-center gap-1.5 rounded-lg bg-green-600 py-2 text-xs font-bold text-white hover:bg-green-500"
+          >
+            <MessageCircle className="h-3.5 w-3.5" />
+            Send WhatsApp Receipt to Customer
+          </a>
+        )}
       </div>
     </div>
   );
