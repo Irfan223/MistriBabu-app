@@ -1,4 +1,4 @@
-import { useState, useEffect, forwardRef } from "react";
+import { useState, useEffect, useRef, forwardRef } from "react";
 import {
   Loader2,
   CheckCircle2,
@@ -6,14 +6,11 @@ import {
   Phone,
   User,
   MapPin,
-  Zap,
-  Droplets,
-  AirVent,
-  Paintbrush,
   AlertCircle,
   Clock,
+  Pencil,
+  ChevronDown,
 } from "lucide-react";
-import { BRAND } from "@/constants/brand";
 import {
   checkServiceAvailability,
   type ServiceAvailability,
@@ -22,6 +19,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/useToast";
 import Toast from "@/components/Toast";
+import { useConfig } from "@/context/AppConfigContext";
 
 interface BookingFormProps {
   prefillCategory: string;
@@ -38,44 +36,83 @@ interface FormState {
   service_category: string;
   sub_service: string;
   problem_description: string;
-  slot_type: "Today" | "Tomorrow" | "Specific Time";
-  specific_date: string;
-  specific_time_range: string;
+  preferred_date: string;
+  preferred_time_range: string;
 }
 
-const TIME_RANGES = [
-  "09:00 AM - 12:00 PM (Morning)",
-  "12:00 PM - 03:00 PM (Afternoon)",
-  "03:00 PM - 06:00 PM (Evening)",
-  "06:00 PM - 09:00 PM (Night)",
-];
-
-// Helper for min date calculation (YYYY-MM-DD)
 const getTodayDateString = () => new Date().toISOString().split("T")[0];
 const getTomorrowDateString = () => {
   const d = new Date();
   d.setDate(d.getDate() + 1);
   return d.toISOString().split("T")[0];
 };
+// Extract "Morning" and "9 AM – 12 PM" from "09:00 AM - 12:00 PM (Morning)"
+const parseSlotLabel = (label: string) => {
+  const match = label.match(/^(.+?)\s*\((.+?)\)\s*$/);
+  if (match) {
+    const time = match[1].trim().replace(" - ", " – ").replace(/:00/g, "");
+    return { name: match[2].trim(), time };
+  }
+  return { name: label, time: "" };
+};
 
-const emptyForm: FormState = {
-  customer_name: "",
-  customer_phone: "",
-  address: "",
-  pincode: "",
-  locality: "",
-  service_category: "Electrician",
-  sub_service: "",
-  problem_description: "",
-  slot_type: "Today",
-  specific_date: getTodayDateString(),
-  specific_time_range: TIME_RANGES[0],
+// After 8PM, earliest bookable date is tomorrow
+const getMinDateString = () =>
+  new Date().getHours() >= 20 ? getTomorrowDateString() : getTodayDateString();
+
+// Parse slot end hour from label e.g. "09:00 AM - 12:00 PM (Morning)" → 12
+const parseSlotEndHour = (label: string): number => {
+  const match = label.match(/- (\d{1,2}):\d{2} (AM|PM)/);
+  if (!match) return 23;
+  let h = parseInt(match[1], 10);
+  if (match[2] === "PM" && h !== 12) h += 12;
+  if (match[2] === "AM" && h === 12) h = 0;
+  return h;
+};
+
+const isSlotPast = (label: string, selectedDate: string): boolean => {
+  if (selectedDate !== getTodayDateString()) return false;
+  return new Date().getHours() >= parseSlotEndHour(label);
+};
+
+// Pick the next sensible time slot based on current hour
+const getDefaultTimeSlot = (slots: string[]): string => {
+  if (slots.length === 0) return "";
+  const hour = new Date().getHours();
+  const idx = hour < 9 ? 0 : hour < 12 ? 1 : hour < 15 ? 2 : hour < 18 ? 3 : 0;
+  return slots[Math.min(idx, slots.length - 1)];
 };
 
 const BookingForm = forwardRef<HTMLDivElement, BookingFormProps>(
   ({ prefillCategory, prefillSubService, onSubmitSuccess }, ref) => {
+    const { config, categories, timeSlots } = useConfig();
+    const timeSlotLabels = timeSlots.map((s) => s.label);
+
+    // Lock flags: when coming via "Book Now" the selections are pre-confirmed
+    const [categoryLocked, setCategoryLocked] = useState(
+      Boolean(prefillCategory),
+    );
+    const [subLocked, setSubLocked] = useState(Boolean(prefillSubService));
+
+    const emptyForm: FormState = {
+      customer_name: "",
+      customer_phone: "",
+      address: "",
+      pincode: "",
+      locality: "",
+      service_category: categories[0]?.name ?? "Electrician",
+      sub_service: "",
+      problem_description: "",
+      preferred_date: getMinDateString(),
+      preferred_time_range: getDefaultTimeSlot(timeSlotLabels),
+    };
+
     const [form, setForm] = useState<FormState>(emptyForm);
     const [errors, setErrors] = useState<Record<string, string>>({});
+
+    const activeCategorySubServices =
+      categories.find((c) => c.name === form.service_category)?.sub_services ??
+      [];
     const [helpers, setHelpers] = useState<Record<string, string>>({});
     const [loading, setLoading] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
@@ -85,12 +122,25 @@ const BookingForm = forwardRef<HTMLDivElement, BookingFormProps>(
     const [availabilityError, setAvailabilityError] = useState(false);
     const { toasts, showToast, dismiss } = useToast();
 
+    // When DB time slots load, update default if still empty
+    useEffect(() => {
+      if (timeSlotLabels.length > 0 && !form.preferred_time_range) {
+        setForm((f) => ({
+          ...f,
+          preferred_time_range: getDefaultTimeSlot(timeSlotLabels),
+        }));
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [timeSlotLabels.length]);
+
     useEffect(() => {
       if (prefillCategory) {
         setForm((f) => ({ ...f, service_category: prefillCategory }));
+        setCategoryLocked(true);
       }
       if (prefillSubService) {
         setForm((f) => ({ ...f, sub_service: prefillSubService }));
+        setSubLocked(true);
       }
     }, [prefillCategory, prefillSubService]);
 
@@ -151,14 +201,8 @@ const BookingForm = forwardRef<HTMLDivElement, BookingFormProps>(
       return { valid: true, helper: "Valid mobile number" };
     };
 
-    const getEffectiveDate = (): string => {
-      if (form.slot_type === "Today") return getTodayDateString();
-      if (form.slot_type === "Tomorrow") return getTomorrowDateString();
-      return form.specific_date;
-    };
-
     const getComputedSlot = (): string => {
-      return `${getEffectiveDate()} (${form.specific_time_range})`;
+      return `${form.preferred_date} (${form.preferred_time_range})`;
     };
 
     const validate = (): boolean => {
@@ -172,14 +216,10 @@ const BookingForm = forwardRef<HTMLDivElement, BookingFormProps>(
       if (!availability?.canBook)
         e.pincode = availability?.message ?? "Enter a serviceable PIN code";
       if (!form.service_category) e.service_category = "Select a service";
-      if (!form.sub_service.trim())
-        e.sub_service = "Describe the service needed";
-
-      if (form.slot_type === "Specific Time" && !form.specific_date)
-        e.specific_date = "Please pick a date";
-      if (!form.specific_time_range)
-        e.specific_time_range = "Please select a time range";
-
+      if (!form.sub_service.trim()) e.sub_service = "Select a service type";
+      if (!form.preferred_date) e.preferred_date = "Please select a date";
+      if (!form.preferred_time_range)
+        e.preferred_time_range = "Please select a time slot";
       setErrors(e);
       return Object.keys(e).length === 0;
     };
@@ -201,8 +241,8 @@ const BookingForm = forwardRef<HTMLDivElement, BookingFormProps>(
 
     const buildWhatsAppUrl = (f: FormState, slotText: string) => {
       const formattedAddress = `${f.address.trim()}, PIN: ${f.pincode}`;
-      const text = `Hi ${BRAND.displayName}! I want to book a service:\n• *Service:* ${f.service_category} - ${f.sub_service}\n• *Name:* ${f.customer_name}\n• *Phone:* ${f.customer_phone}\n• *Address:* ${formattedAddress}\n• *Slot:* ${slotText}\n• *Issue:* ${f.problem_description || "—"}`;
-      return `https://wa.me/${BRAND.whatsappNumber}?text=${encodeURIComponent(text)}`;
+      const text = `Hi ${config.brand_display_name}! I want to book a service:\n\u2022 *Service:* ${f.service_category} - ${f.sub_service}\n\u2022 *Name:* ${f.customer_name}\n\u2022 *Phone:* ${f.customer_phone}\n\u2022 *Address:* ${formattedAddress}\n\u2022 *Slot:* ${slotText}\n\u2022 *Issue:* ${f.problem_description || "\u2014"}`;
+      return `https://wa.me/${config.whatsapp_number}?text=${encodeURIComponent(text)}`;
     };
 
     const handleSubmit = async (ev: React.FormEvent) => {
@@ -257,6 +297,16 @@ const BookingForm = forwardRef<HTMLDivElement, BookingFormProps>(
     const pincodeComplete = /^\d{6}$/.test(form.pincode);
     const pincodeValid = Boolean(availability?.canBook);
 
+    const isFormComplete =
+      form.customer_name.trim().length > 0 &&
+      phoneValid &&
+      form.address.trim().length > 0 &&
+      pincodeValid &&
+      form.service_category.length > 0 &&
+      form.sub_service.trim().length > 0 &&
+      form.preferred_date.length > 0 &&
+      form.preferred_time_range.length > 0;
+
     return (
       <section
         id="booking"
@@ -295,7 +345,7 @@ const BookingForm = forwardRef<HTMLDivElement, BookingFormProps>(
                 type="text"
                 value={form.customer_name}
                 onChange={(e) => handleChange("customer_name", e.target.value)}
-                placeholder="e.g. Ramesh Kumar"
+                placeholder="Enter your full name"
                 className="form-input"
               />
             </Field>
@@ -318,7 +368,7 @@ const BookingForm = forwardRef<HTMLDivElement, BookingFormProps>(
                     e.target.value.replace(/\D/g, ""),
                   )
                 }
-                placeholder="10-digit mobile number"
+                placeholder="Enter your 10-digit mobile number"
                 className="form-input"
               />
             </Field>
@@ -332,7 +382,7 @@ const BookingForm = forwardRef<HTMLDivElement, BookingFormProps>(
                 type="text"
                 value={form.address}
                 onChange={(e) => handleChange("address", e.target.value)}
-                placeholder="e.g. Flat 201, Mithanpura Chowk"
+                placeholder="Enter your street address or landmark"
                 className="form-input"
               />
             </Field>
@@ -346,7 +396,7 @@ const BookingForm = forwardRef<HTMLDivElement, BookingFormProps>(
                 onChange={(e) =>
                   handleChange("pincode", e.target.value.replace(/\D/g, ""))
                 }
-                placeholder="6-digit PIN code"
+                placeholder="Enter your 6-digit PIN code"
                 className="form-input"
                 aria-describedby="pincode-status"
               />
@@ -366,7 +416,7 @@ const BookingForm = forwardRef<HTMLDivElement, BookingFormProps>(
                   Availability is temporarily unavailable. Please call dispatch
                   to check the nearest technician.
                   <a
-                    href={`tel:${BRAND.callingNumber}`}
+                    href={`tel:${config.calling_number}`}
                     className="ml-2 underline"
                   >
                     Call Dispatch
@@ -387,7 +437,7 @@ const BookingForm = forwardRef<HTMLDivElement, BookingFormProps>(
                   {!availability.canBook && `❌ ${availability.message}`}
                   {!availability.canBook && (
                     <a
-                      href={`tel:${BRAND.callingNumber}`}
+                      href={`tel:${config.calling_number}`}
                       className="ml-2 inline-block underline"
                     >
                       Call Dispatch
@@ -398,138 +448,139 @@ const BookingForm = forwardRef<HTMLDivElement, BookingFormProps>(
             </Field>
 
             <div className="grid grid-cols-1 gap-4">
+              {/* Category — locked chip if prefilled, dropdown if direct */}
               <Field label="Service Category" error={errors.service_category}>
-                <div className="grid grid-cols-2 gap-1 rounded-xl bg-slate-200 p-1 sm:grid-cols-4">
-                  <CategoryPill
-                    active={form.service_category === "Electrician"}
-                    onClick={() =>
-                      handleChange("service_category", "Electrician")
-                    }
-                    icon={<Zap className="h-4 w-4" />}
-                    label="Electrician"
+                {categoryLocked && prefillCategory ? (
+                  <div className="flex items-center justify-between rounded-xl bg-brand-50 px-4 py-2.5 ring-1 ring-brand-200">
+                    <span className="flex items-center gap-2 text-sm font-bold text-brand-700">
+                      <span className="text-base">
+                        {
+                          categories.find(
+                            (c) => c.name === form.service_category,
+                          )?.icon
+                        }
+                      </span>
+                      {form.service_category}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setCategoryLocked(false)}
+                      className="flex items-center gap-1 text-xs font-semibold text-brand-500 hover:text-brand-700"
+                    >
+                      <Pencil className="h-3 w-3" /> Change
+                    </button>
+                  </div>
+                ) : (
+                  <OptionPicker
+                    value={form.service_category}
+                    onChange={(val) => {
+                      handleChange("service_category", val);
+                      handleChange("sub_service", "");
+                      setSubLocked(false);
+                    }}
+                    options={categories.map((c) => ({
+                      value: c.name,
+                      label: c.name,
+                      icon: c.icon,
+                    }))}
+                    placeholder="Select a category"
                   />
-                  <CategoryPill
-                    active={form.service_category === "Plumber"}
-                    onClick={() => handleChange("service_category", "Plumber")}
-                    icon={<Droplets className="h-4 w-4" />}
-                    label="Plumber"
-                  />
-                  <CategoryPill
-                    active={form.service_category === "AC Technician"}
-                    onClick={() =>
-                      handleChange("service_category", "AC Technician")
-                    }
-                    icon={<AirVent className="h-4 w-4" />}
-                    label="AC"
-                  />
-                  <CategoryPill
-                    active={form.service_category === "Carpenter"}
-                    onClick={() =>
-                      handleChange("service_category", "Carpenter")
-                    }
-                    icon={<Paintbrush className="h-4 w-4" />}
-                    label="Carpenter"
-                  />
-                </div>
-              </Field>
-
-              {/* Preferred Slot Selector */}
-              <Field
-                label="Preferred Slot"
-                icon={<Calendar className="h-4 w-4" />}
-                error={errors.slot_type}
-              >
-                <select
-                  value={form.slot_type}
-                  onChange={(e) =>
-                    handleChange(
-                      "slot_type",
-                      e.target.value as FormState["slot_type"],
-                    )
-                  }
-                  className="form-input"
-                >
-                  <option value="Today">Today</option>
-                  <option value="Tomorrow">Tomorrow</option>
-                  <option value="Specific Time">
-                    Pick a specific date & time
-                  </option>
-                </select>
-              </Field>
-
-              {/* Calendar & Time Range Section */}
-              <div className="space-y-4 rounded-xl border border-brand-200 bg-brand-50/50 p-4 transition-all">
-                {form.slot_type === "Specific Time" && (
-                  <Field
-                    label="Select Date"
-                    icon={<Calendar className="h-4 w-4 text-brand-600" />}
-                    error={errors.specific_date}
-                  >
-                    <input
-                      type="date"
-                      min={getTodayDateString()}
-                      value={form.specific_date}
-                      onChange={(e) =>
-                        handleChange("specific_date", e.target.value)
-                      }
-                      className="form-input bg-white"
-                    />
-                  </Field>
                 )}
+              </Field>
+
+              {/* Sub-service — locked chip if prefilled, dropdown from DB otherwise */}
+              <Field label="Service Type" error={errors.sub_service}>
+                {subLocked && prefillSubService ? (
+                  <div className="flex items-center justify-between rounded-xl bg-orange-50 px-4 py-2.5 ring-1 ring-orange-200">
+                    <span className="text-sm font-bold text-orange-700">
+                      {form.sub_service}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setSubLocked(false)}
+                      className="flex items-center gap-1 text-xs font-semibold text-orange-400 hover:text-orange-600"
+                    >
+                      <Pencil className="h-3 w-3" /> Change
+                    </button>
+                  </div>
+                ) : (
+                  <OptionPicker
+                    value={form.sub_service}
+                    onChange={(val) => handleChange("sub_service", val)}
+                    options={[
+                      ...activeCategorySubServices.map((s) => ({
+                        value: s.name,
+                        label: s.name,
+                        badge: `₹${s.price}`,
+                      })),
+                      { value: "other", label: "Other / Not listed" },
+                    ]}
+                    placeholder="Select a service type..."
+                  />
+                )}
+              </Field>
+
+              {/* Date + time side by side */}
+              <div className="grid grid-cols-2 gap-3">
+                <Field
+                  label="Visit Date"
+                  icon={<Calendar className="h-4 w-4" />}
+                  error={errors.preferred_date}
+                >
+                  <CustomDatePicker
+                    value={form.preferred_date}
+                    minDate={getMinDateString()}
+                    onChange={(newDate) => {
+                      handleChange("preferred_date", newDate);
+                      const firstValid = timeSlotLabels.find(
+                        (s) => !isSlotPast(s, newDate),
+                      );
+                      if (
+                        firstValid &&
+                        isSlotPast(form.preferred_time_range, newDate)
+                      ) {
+                        handleChange("preferred_time_range", firstValid);
+                      }
+                    }}
+                  />
+                </Field>
 
                 <Field
-                  label="Select Time Range"
-                  icon={<Clock className="h-4 w-4 text-brand-600" />}
-                  error={errors.specific_time_range}
+                  label="Time Slot"
+                  icon={<Clock className="h-4 w-4" />}
+                  error={errors.preferred_time_range}
                 >
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                    {TIME_RANGES.map((slot) => {
-                      const isSelected = form.specific_time_range === slot;
-                      return (
-                        <button
-                          key={slot}
-                          type="button"
-                          onClick={() =>
-                            handleChange("specific_time_range", slot)
-                          }
-                          className={`flex items-center justify-between rounded-lg px-3.5 py-2.5 text-xs font-semibold transition ${
-                            isSelected
-                              ? "border-2 border-brand-600 bg-brand-600 text-white shadow-sm"
-                              : "border border-slate-200 bg-white text-slate-700 hover:border-brand-300"
-                          }`}
-                        >
-                          <span>{slot}</span>
-                          {isSelected && (
-                            <CheckCircle2 className="h-4 w-4 shrink-0 text-white" />
-                          )}
-                        </button>
-                      );
+                  <OptionPicker
+                    value={form.preferred_time_range}
+                    onChange={(val) =>
+                      handleChange("preferred_time_range", val)
+                    }
+                    options={timeSlotLabels.map((s) => {
+                      // "09:00 AM - 12:00 PM (Morning)" → "9 AM – 12 PM"
+                      const label = s
+                        .replace(/\s*\(.+\)\s*$/, "")
+                        .replace(/:00/g, "")
+                        .replace(" - ", "–")
+                        .trim();
+                      return {
+                        value: s,
+                        label,
+                        disabled: isSlotPast(s, form.preferred_date),
+                      };
                     })}
-                  </div>
+                    placeholder="Select time"
+                  />
                 </Field>
               </div>
             </div>
 
-            <Field
-              label="Specific Service / Problem"
-              error={errors.sub_service}
-            >
-              <input
-                type="text"
-                value={form.sub_service}
-                onChange={(e) => handleChange("sub_service", e.target.value)}
-                placeholder="e.g. Ceiling fan not working"
-                className="form-input"
-              />
-            </Field>
-
-            <Field label="Problem Description (optional)">
+            <Field label="Additional Details (optional)">
               <textarea
                 value={form.problem_description}
                 onChange={(e) =>
                   handleChange("problem_description", e.target.value)
                 }
-                placeholder="Tell us a bit more about the issue..."
+                placeholder="Describe your issue (optional)"
                 rows={3}
                 className="form-input resize-none"
               />
@@ -537,7 +588,7 @@ const BookingForm = forwardRef<HTMLDivElement, BookingFormProps>(
 
             <button
               type="submit"
-              disabled={loading || availabilityLoading || !pincodeValid}
+              disabled={loading || availabilityLoading || !isFormComplete}
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-orange-600 px-6 py-3.5 text-base font-bold text-white shadow-lg shadow-orange-600/20 transition hover:bg-orange-500 active:scale-95 disabled:cursor-not-allowed disabled:opacity-70"
             >
               {loading ? (
@@ -553,8 +604,8 @@ const BookingForm = forwardRef<HTMLDivElement, BookingFormProps>(
               )}
             </button>
             <p className="text-center text-xs text-slate-400">
-              {BRAND.inspectionFee} visit charge applies. You'll be redirected
-              to WhatsApp to confirm.
+              ₹{config.inspection_fee} visit charge applies. You'll be
+              redirected to WhatsApp to confirm.
             </p>
           </form>
         </div>
@@ -601,29 +652,280 @@ function Field({
   );
 }
 
-function CategoryPill({
-  active,
-  onClick,
-  icon,
-  label,
-}: {
-  active: boolean;
-  onClick: () => void;
-  icon: React.ReactNode;
+interface PickerOption {
+  value: string;
   label: string;
+  sublabel?: string;
+  icon?: string;
+  badge?: string;
+  disabled?: boolean;
+}
+
+function OptionPicker({
+  value,
+  onChange,
+  options,
+  placeholder,
+}: {
+  value: string;
+  onChange: (val: string) => void;
+  options: PickerOption[];
+  placeholder: string;
 }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const selected = options.find((o) => o.value === value);
+
+  // Close on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node))
+        setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2.5 text-sm font-semibold transition ${
-        active
-          ? "bg-brand-600 text-white shadow-sm"
-          : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-100"
-      }`}
-    >
-      {icon}
-      {label}
-    </button>
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className={`flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold transition ring-1 ${
+          open
+            ? "bg-white ring-brand-500 shadow-sm"
+            : "bg-white ring-slate-200 hover:ring-brand-300"
+        }`}
+      >
+        {selected ? (
+          <span className="flex items-center gap-2 min-w-0">
+            {selected.icon && (
+              <span className="text-lg leading-none shrink-0">
+                {selected.icon}
+              </span>
+            )}
+            <span className="min-w-0">
+              <span className="block text-slate-800">{selected.label}</span>
+              {selected.sublabel && (
+                <span className="block text-[10px] text-slate-400">
+                  {selected.sublabel}
+                </span>
+              )}
+            </span>
+            {selected.badge && (
+              <span className="ml-1 shrink-0 rounded-full bg-orange-100 px-2 py-0.5 text-xs font-bold text-orange-600">
+                From {selected.badge}
+              </span>
+            )}
+          </span>
+        ) : (
+          <span className="text-slate-400">{placeholder}</span>
+        )}
+        <ChevronDown
+          className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+
+      {open && (
+        <div className="absolute right-0 z-20 mt-1.5 min-w-full min-w-[220px] rounded-xl bg-white shadow-lg ring-1 ring-slate-200 overflow-hidden">
+          {options.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              disabled={opt.disabled}
+              onClick={() => {
+                if (!opt.disabled) {
+                  onChange(opt.value);
+                  setOpen(false);
+                }
+              }}
+              className={`flex w-full items-center justify-between px-4 py-3 text-sm transition ${
+                opt.disabled
+                  ? "cursor-not-allowed opacity-40"
+                  : opt.value === value
+                    ? "bg-brand-50 font-bold text-brand-700"
+                    : "text-slate-700 hover:bg-brand-50"
+              }`}
+            >
+              <span className="flex items-center gap-2.5 min-w-0">
+                {opt.icon && (
+                  <span className="text-lg leading-none shrink-0">
+                    {opt.icon}
+                  </span>
+                )}
+                <span className="min-w-0">
+                  <span className="block">{opt.label}</span>
+                  {opt.sublabel && (
+                    <span className="block text-[10px] text-slate-400">
+                      {opt.sublabel}
+                    </span>
+                  )}
+                </span>
+              </span>
+              {opt.badge && (
+                <span className="ml-3 shrink-0 rounded-full bg-orange-100 px-2.5 py-0.5 text-xs font-bold text-orange-600">
+                  From {opt.badge}
+                </span>
+              )}
+              {opt.value === value && !opt.disabled && (
+                <CheckCircle2 className="ml-2 h-4 w-4 shrink-0 text-brand-600" />
+              )}
+              {opt.disabled && (
+                <span className="ml-2 text-[10px] text-slate-400">past</span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CustomDatePicker({
+  value,
+  minDate,
+  onChange,
+}: {
+  value: string;
+  minDate: string;
+  onChange: (date: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const initial = new Date(value + "T00:00:00");
+  const [viewYear, setViewYear] = useState(initial.getFullYear());
+  const [viewMonth, setViewMonth] = useState(initial.getMonth());
+  const minD = new Date(minDate + "T00:00:00");
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node))
+        setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const prevMonth = () => {
+    if (viewMonth === 0) {
+      setViewYear((y) => y - 1);
+      setViewMonth(11);
+    } else setViewMonth((m) => m - 1);
+  };
+  const nextMonth = () => {
+    if (viewMonth === 11) {
+      setViewYear((y) => y + 1);
+      setViewMonth(0);
+    } else setViewMonth((m) => m + 1);
+  };
+
+  const firstDay = new Date(viewYear, viewMonth, 1).getDay();
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+
+  const displayDate = new Date(value + "T00:00:00").toLocaleDateString(
+    "en-IN",
+    {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    },
+  );
+  const monthLabel = new Date(viewYear, viewMonth, 1).toLocaleDateString(
+    "en-IN",
+    {
+      month: "long",
+      year: "numeric",
+    },
+  );
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className={`flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold transition ring-1 ${
+          open
+            ? "bg-white ring-brand-500 shadow-sm"
+            : "bg-white ring-slate-200 hover:ring-brand-300"
+        }`}
+      >
+        <span className="flex items-center gap-2 text-slate-800">
+          <Calendar className="h-4 w-4 text-brand-600 shrink-0" />
+          {displayDate}
+        </span>
+        <ChevronDown
+          className={`h-4 w-4 text-slate-400 transition-transform ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+
+      {open && (
+        <div className="absolute z-30 left-0 mt-1.5 w-72 rounded-2xl bg-white shadow-xl ring-1 ring-slate-200 overflow-hidden">
+          <div className="flex items-center justify-between bg-brand-600 px-3 py-3">
+            <button
+              type="button"
+              onClick={prevMonth}
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-xl font-bold text-white hover:bg-brand-500 transition"
+            >
+              ‹
+            </button>
+            <span className="text-sm font-bold text-white">{monthLabel}</span>
+            <button
+              type="button"
+              onClick={nextMonth}
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-xl font-bold text-white hover:bg-brand-500 transition"
+            >
+              ›
+            </button>
+          </div>
+
+          <div className="grid grid-cols-7 border-b border-slate-100 bg-slate-50">
+            {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((d) => (
+              <div
+                key={d}
+                className="py-2 text-center text-[10px] font-bold text-slate-400"
+              >
+                {d}
+              </div>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-7 gap-0.5 p-2">
+            {Array.from({ length: firstDay }).map((_, i) => (
+              <div key={`e${i}`} />
+            ))}
+            {Array.from({ length: daysInMonth }).map((_, i) => {
+              const day = i + 1;
+              const thisD = new Date(viewYear, viewMonth, day);
+              const dateStr = thisD.toLocaleDateString("en-CA");
+              const isPast = thisD < minD;
+              const isSelected = dateStr === value;
+              const isToday = dateStr === getTodayDateString();
+              return (
+                <button
+                  key={day}
+                  type="button"
+                  disabled={isPast}
+                  onClick={() => {
+                    onChange(dateStr);
+                    setOpen(false);
+                  }}
+                  className={`flex h-9 w-full items-center justify-center rounded-xl text-sm font-semibold transition ${
+                    isSelected
+                      ? "bg-brand-600 text-white shadow-sm"
+                      : isPast
+                        ? "cursor-not-allowed text-slate-300"
+                        : isToday
+                          ? "ring-2 ring-brand-400 text-brand-700 hover:bg-brand-50"
+                          : "text-slate-700 hover:bg-slate-100 active:scale-95"
+                  }`}
+                >
+                  {day}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

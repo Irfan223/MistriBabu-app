@@ -17,9 +17,10 @@ import AdminLoginModal from "@/components/AdminLoginModal";
 import InstallPromptBanner from "@/components/InstallPromptBanner";
 import NearbyMistriDiscovery from "@/components/NearbyMistriDiscovery";
 import { supabase } from "@/lib/supabase";
-import { BRAND } from "@/constants/brand";
+import { useConfig } from "@/context/AppConfigContext";
 
 export default function App() {
+  const { config } = useConfig();
   const [route, setRoute] = useState(window.location.hash);
   const [bookingPrefill, setBookingPrefill] = useState({
     category: "",
@@ -180,17 +181,22 @@ export default function App() {
 
       <footer className="bg-slate-900 py-8 text-center">
         <div className="mx-auto max-w-6xl px-4">
-          <p className="text-sm font-bold text-white">{BRAND.displayName}</p>
+          <p className="text-sm font-bold text-white">
+            {config.brand_display_name}
+          </p>
           <p className="mt-1 text-xs text-brand-300">
-            {BRAND.taglines.primary}
+            {config.tagline_primary}
           </p>
           <div className="mt-4 flex flex-wrap items-center justify-center gap-4 text-xs text-brand-300">
-            <a href={`tel:${BRAND.callingNumber}`} className="hover:text-white">
-              Call: {BRAND.supportPhone}
+            <a
+              href={`tel:${config.calling_number}`}
+              className="hover:text-white"
+            >
+              Call: {config.support_phone}
             </a>
             <span className="text-slate-600">|</span>
             <a
-              href={`https://wa.me/${BRAND.whatsappNumber}`}
+              href={`https://wa.me/${config.whatsapp_number}`}
               target="_blank"
               rel="noopener noreferrer"
               className="hover:text-white"
@@ -199,8 +205,7 @@ export default function App() {
             </a>
           </div>
           <p className="mt-4 text-xs text-slate-500">
-            © 2026 {BRAND.displayName}. Proudly serving Muzaffarpur, Sitamarhi,
-            Sheohar &amp; Motihari, Bihar.
+            © 2026 {config.brand_display_name}. {config.footer_serving_text}
           </p>
           {/* Hidden in plain sight — internal staff only */}
           <div className="mt-3 flex items-center justify-center gap-3 text-[10px] text-slate-700">

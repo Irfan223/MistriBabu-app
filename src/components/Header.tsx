@@ -9,7 +9,7 @@ import {
   ShoppingBag,
 } from "lucide-react";
 import { useState } from "react";
-import { BRAND } from "@/constants/brand";
+import { useConfig } from "@/context/AppConfigContext";
 
 interface HeaderProps {
   onBookClick: () => void;
@@ -24,9 +24,10 @@ export default function Header({
   onTechLoginClick,
   onOrdersClick,
 }: HeaderProps) {
+  const { config } = useConfig();
   const [menuOpen, setMenuOpen] = useState(false);
-  const waLink = `https://wa.me/${BRAND.whatsappNumber}?text=${encodeURIComponent(
-    `Hi ${BRAND.displayName}! I want to know more about your services.`,
+  const waLink = `https://wa.me/${config.whatsapp_number}?text=${encodeURIComponent(
+    `Hi ${config.brand_display_name}! I want to know more about your services.`,
   )}`;
 
   return (
@@ -42,10 +43,10 @@ export default function Header({
           </div>
           <div className="min-w-0">
             <h1 className="text-lg font-bold text-white leading-tight tracking-tight">
-              {BRAND.displayName}
+              {config.brand_display_name}
             </h1>
             <p className="text-[10px] text-brand-300 leading-none truncate">
-              {BRAND.region}
+              {config.hero_region_label}
             </p>
           </div>
         </div>
@@ -53,7 +54,7 @@ export default function Header({
         {/* Desktop nav */}
         <div className="hidden items-center gap-2 sm:flex">
           <a
-            href={`tel:${BRAND.callingNumber}`}
+            href={`tel:${config.calling_number}`}
             className="hidden sm:flex items-center gap-1.5 rounded-lg bg-orange-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-orange-500 active:scale-95"
           >
             <Phone className="h-4 w-4" />
@@ -132,12 +133,12 @@ export default function Header({
               Book a service
             </button>
             <a
-              href={`tel:${BRAND.callingNumber}`}
+              href={`tel:${config.calling_number}`}
               onClick={() => setMenuOpen(false)}
               className="flex items-center gap-3 rounded-lg bg-white/10 px-4 py-3 text-sm font-semibold text-white ring-1 ring-white/10"
             >
               <Phone className="h-4 w-4 text-orange-400" />
-              Call {BRAND.supportPhone}
+              Call {config.support_phone}
             </a>
             <a
               href={waLink}

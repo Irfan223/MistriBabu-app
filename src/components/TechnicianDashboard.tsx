@@ -20,7 +20,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { BRAND } from "@/constants/brand";
+import { useConfig } from "@/context/AppConfigContext";
 import { useToast } from "@/hooks/useToast";
 import Toast from "@/components/Toast";
 
@@ -87,6 +87,7 @@ function maskPhone(phone: string): string {
 export default function TechnicianDashboard({
   onLogout,
 }: TechnicianDashboardProps) {
+  const { config } = useConfig();
   const [technician, setTechnician] = useState<Technician | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -94,6 +95,35 @@ export default function TechnicianDashboard({
   const [updatingId, setUpdatingId] = useState<number | null>(null);
   const [openStatusId, setOpenStatusId] = useState<number | null>(null);
   const { toasts, showToast, dismiss } = useToast();
+  const [hindi, setHindi] = useState(true);
+
+  const t = {
+    portal: hindi ? "टेक्नीशियन पोर्टल" : "Technician Portal",
+    logout: hindi ? "लॉगआउट" : "Logout",
+    retry: hindi ? "दोबारा कोशिश करें" : "Retry",
+    verified: hindi ? "सत्यापित" : "Verified",
+    pending: hindi ? "सत्यापन बाकी" : "Pending Verification",
+    exp: hindi ? "वर्ष अनुभव" : "yr exp.",
+    bookings: (n: number) =>
+      hindi ? `आपकी बुकिंग (${n})` : `Assigned Bookings (${n})`,
+    noBookings: hindi ? "अभी कोई बुकिंग नहीं" : "No bookings assigned yet",
+    noBookingsSub: hindi
+      ? "नई बुकिंग यहाँ दिखेगी"
+      : "New assignments will appear here",
+    update: hindi ? "अपडेट" : "Update",
+    markCompleted: hindi ? "पूरा हुआ बताएं" : "Mark COMPLETED",
+    markCancelled: hindi ? "रद्द करें" : "Mark CANCELLED",
+    labelName: hindi ? "ग्राहक" : "Customer",
+    labelAddress: hindi ? "पता" : "Address",
+    labelSlot: hindi ? "समय" : "Slot",
+    labelIssue: hindi ? "समस्या" : "Issue",
+    statusMap: {
+      PENDING: hindi ? "प्रतीक्षारत" : "PENDING",
+      ASSIGNED: hindi ? "असाइन्ड" : "ASSIGNED",
+      COMPLETED: hindi ? "पूर्ण" : "COMPLETED",
+      CANCELLED: hindi ? "रद्द" : "CANCELLED",
+    } as Record<string, string>,
+  };
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -185,13 +215,13 @@ export default function TechnicianDashboard({
           onClick={fetchData}
           className="flex items-center gap-2 rounded-lg bg-orange-600 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-500"
         >
-          <RefreshCw className="h-4 w-4" /> Retry
+          <RefreshCw className="h-4 w-4" /> {t.retry}
         </button>
         <button
           onClick={handleLogout}
           className="text-xs text-slate-500 hover:text-slate-700 underline"
         >
-          Logout
+          {t.logout}
         </button>
       </div>
     );
@@ -214,12 +244,18 @@ export default function TechnicianDashboard({
             </div>
             <div>
               <p className="text-sm font-bold text-slate-900">
-                {BRAND.displayName}
+                {config.brand_display_name}
               </p>
-              <p className="text-[10px] text-slate-400">Technician Portal</p>
+              <p className="text-[10px] text-slate-400">{t.portal}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => setHindi((h) => !h)}
+              className="rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-bold text-slate-500 hover:bg-slate-50 transition"
+            >
+              {hindi ? "English" : "हिंदी"}
+            </button>
             <button
               onClick={fetchData}
               className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100"
@@ -231,7 +267,7 @@ export default function TechnicianDashboard({
               className="flex items-center gap-1.5 rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-200"
             >
               <LogOut className="h-3.5 w-3.5" />
-              Logout
+              {t.logout}
             </button>
           </div>
         </div>
@@ -252,11 +288,11 @@ export default function TechnicianDashboard({
                   </h2>
                   {technician.is_verified ? (
                     <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-semibold text-green-700">
-                      <CheckCircle2 className="h-3 w-3" /> Verified
+                      <CheckCircle2 className="h-3 w-3" /> {t.verified}
                     </span>
                   ) : (
                     <span className="inline-flex items-center gap-1 rounded-full bg-yellow-100 px-2 py-0.5 text-[10px] font-semibold text-yellow-700">
-                      <Clock className="h-3 w-3" /> Pending Verification
+                      <Clock className="h-3 w-3" /> {t.pending}
                     </span>
                   )}
                 </div>
@@ -300,7 +336,7 @@ export default function TechnicianDashboard({
           <div className="mb-2 flex items-center gap-2">
             <ClipboardList className="h-4 w-4 text-slate-500" />
             <h3 className="text-sm font-bold text-slate-700">
-              Assigned Bookings ({bookings.length})
+              {t.bookings(bookings.length)}
             </h3>
           </div>
 
@@ -308,11 +344,9 @@ export default function TechnicianDashboard({
             <div className="rounded-2xl bg-white p-10 text-center shadow-sm ring-1 ring-slate-100">
               <ClipboardList className="mx-auto h-10 w-10 text-slate-300" />
               <p className="mt-3 text-sm font-medium text-slate-500">
-                No bookings assigned yet
+                {t.noBookings}
               </p>
-              <p className="mt-1 text-xs text-slate-400">
-                New assignments will appear here
-              </p>
+              <p className="mt-1 text-xs text-slate-400">{t.noBookingsSub}</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -333,7 +367,7 @@ export default function TechnicianDashboard({
                           <span
                             className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${STATUS_STYLE[b.status] ?? "bg-slate-100 text-slate-600"}`}
                           >
-                            {b.status}
+                            {t.statusMap[b.status] ?? b.status}
                           </span>
                         </div>
                         <p className="mt-0.5 text-xs font-semibold text-orange-700">
@@ -363,7 +397,7 @@ export default function TechnicianDashboard({
                             ) : (
                               <ChevronDown className="h-3.5 w-3.5" />
                             )}
-                            Update
+                            {t.update}
                           </button>
                           {openStatusId === b.id && (
                             <div className="absolute right-0 top-full z-10 mt-1 min-w-[130px] rounded-xl border border-slate-200 bg-white shadow-lg">
@@ -384,7 +418,9 @@ export default function TechnicianDashboard({
                                   ) : (
                                     <XCircle className="h-3.5 w-3.5" />
                                   )}
-                                  Mark {status}
+                                  {status === "COMPLETED"
+                                    ? t.markCompleted
+                                    : t.markCancelled}
                                 </button>
                               ))}
                             </div>
@@ -394,19 +430,51 @@ export default function TechnicianDashboard({
                     </div>
 
                     <div className="mt-3 grid grid-cols-1 gap-1.5 border-t border-slate-100 pt-3 sm:grid-cols-2">
-                      <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                        <UserCircle className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-                        <span className="font-medium text-slate-700">
-                          {b.customer_name}
+                      <div className="flex items-start gap-1.5 text-xs">
+                        <UserCircle className="h-3.5 w-3.5 shrink-0 mt-0.5 text-slate-400" />
+                        <span>
+                          <span className="font-semibold text-slate-500">
+                            {t.labelName}:{" "}
+                          </span>
+                          <span className="text-slate-800">
+                            {b.customer_name}
+                          </span>
                         </span>
                       </div>
-                      <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                        <MapPin className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-                        <span className="line-clamp-1">{b.locality}</span>
+                      <div className="flex items-start gap-1.5 text-xs">
+                        <MapPin className="h-3.5 w-3.5 shrink-0 mt-0.5 text-slate-400" />
+                        <span>
+                          <span className="font-semibold text-slate-500">
+                            {t.labelAddress}:{" "}
+                          </span>
+                          <span className="text-slate-700 line-clamp-1">
+                            {b.locality}
+                          </span>
+                        </span>
                       </div>
-                      <div className="flex items-center gap-1.5 text-xs text-slate-500 sm:col-span-2">
-                        <Calendar className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-                        <span>{b.preferred_slot}</span>
+                      {b.problem_description && (
+                        <div className="flex items-start gap-1.5 text-xs sm:col-span-2">
+                          <span className="text-slate-400 mt-0.5">📝</span>
+                          <span>
+                            <span className="font-semibold text-slate-500">
+                              {t.labelIssue}:{" "}
+                            </span>
+                            <span className="text-slate-700">
+                              {b.problem_description}
+                            </span>
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex items-start gap-1.5 text-xs sm:col-span-2">
+                        <Calendar className="h-3.5 w-3.5 shrink-0 mt-0.5 text-slate-400" />
+                        <span>
+                          <span className="font-semibold text-slate-500">
+                            {t.labelSlot}:{" "}
+                          </span>
+                          <span className="text-slate-700">
+                            {b.preferred_slot}
+                          </span>
+                        </span>
                       </div>
                     </div>
                   </div>

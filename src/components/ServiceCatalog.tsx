@@ -1,84 +1,83 @@
-import { useState } from "react";
-import { Zap, Droplets, AirVent, Paintbrush, ArrowRight } from "lucide-react";
-import { SERVICE_CATALOG, BRAND } from "@/constants/brand";
+import { useState, useEffect, useRef } from "react";
+import { ArrowRight, ChevronDown } from "lucide-react";
+import { useConfig } from "@/context/AppConfigContext";
+import type { ServiceCategory } from "@/hooks/useAppConfig";
 
 interface ServiceCatalogProps {
   onBookService: (category: string, subService: string) => void;
 }
 
 export default function ServiceCatalog({ onBookService }: ServiceCatalogProps) {
-  const [activeTab, setActiveTab] = useState<
-    "Electrician" | "Plumber" | "AC Technician" | "Painter"
-  >("Electrician");
+  const { config, categories } = useConfig();
+  const [activeTab, setActiveTab] = useState<string>("");
 
-  const services = SERVICE_CATALOG[activeTab];
+  // Set first category as default once categories are loaded
+  useEffect(() => {
+    if (categories.length > 0 && !activeTab) {
+      setActiveTab(categories[0].name);
+    }
+  }, [categories, activeTab]);
+
+  const activeCategory: ServiceCategory | undefined =
+    categories.find((c) => c.name === activeTab) ?? categories[0];
 
   return (
     <section id="services" className="bg-slate-50 py-12 sm:py-16">
       <div className="mx-auto max-w-6xl px-4">
         <div className="text-center">
           <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
-            {BRAND.serviceCopy.heading}
+            {config.service_heading}
           </h3>
           <p className="mt-2 text-sm text-slate-500">
-            {BRAND.serviceCopy.description}
+            {config.service_description}
           </p>
         </div>
 
-        <div className="mt-8 flex justify-center">
-          <div className="inline-flex max-w-full items-center gap-1.5 rounded-2xl bg-[#E7ECF3] p-1.5 overflow-x-auto no-scrollbar shadow-inner">
-            <TabButton
-              active={activeTab === "Electrician"}
-              onClick={() => setActiveTab("Electrician")}
-              icon={<Zap className="h-4 w-4" />}
-              label="Electrician"
+        {/* Mobile: custom styled dropdown. Desktop (sm+): tab pill bar */}
+        <div className="mt-8">
+          <div className="sm:hidden">
+            <CategoryDropdown
+              categories={categories}
+              value={activeTab}
+              onChange={setActiveTab}
             />
-            <TabButton
-              active={activeTab === "Plumber"}
-              onClick={() => setActiveTab("Plumber")}
-              icon={<Droplets className="h-4 w-4" />}
-              label="Plumber"
-            />
-            <TabButton
-              active={activeTab === "AC Technician"}
-              onClick={() => setActiveTab("AC Technician")}
-              icon={<AirVent className="h-4 w-4" />}
-              label="AC"
-            />
-            <TabButton
-              active={activeTab === "Painter"}
-              onClick={() => setActiveTab("Painter")}
-              icon={<Paintbrush className="h-4 w-4" />}
-              label="Painter"
-            />
+          </div>
+
+          {/* Desktop tab pill bar — original centred inline design */}
+          <div className="hidden sm:flex justify-center">
+            <div className="inline-flex items-center gap-1.5 rounded-2xl bg-[#E7ECF3] p-1.5 shadow-inner">
+              {categories.map((cat) => (
+                <TabButton
+                  key={cat.id}
+                  active={activeTab === cat.name}
+                  onClick={() => setActiveTab(cat.name)}
+                  icon={
+                    <span className="text-base leading-none">{cat.icon}</span>
+                  }
+                  label={cat.name === "AC Technician" ? "AC" : cat.name}
+                />
+              ))}
+            </div>
           </div>
         </div>
 
         <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {services.map((svc) => (
+          {(activeCategory?.sub_services ?? []).map((svc) => (
             <div
-              key={svc.name}
+              key={svc.id}
               className="group flex flex-col rounded-2xl bg-white p-5 ring-1 ring-slate-200 transition hover:ring-brand-400 hover:shadow-lg"
             >
-              <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
-                {activeTab === "Electrician" ? (
-                  <Zap className="h-5 w-5" />
-                ) : activeTab === "Plumber" ? (
-                  <Droplets className="h-5 w-5" />
-                ) : activeTab === "AC Technician" ? (
-                  <AirVent className="h-5 w-5" />
-                ) : (
-                  <Paintbrush className="h-5 w-5" />
-                )}
+              <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-brand-600 text-xl">
+                {activeCategory?.icon}
               </div>
               <h4 className="text-base font-bold text-slate-900 leading-snug">
                 {svc.name}
               </h4>
               <p className="mt-1 text-xs text-slate-500 leading-relaxed flex-1">
-                {svc.desc}
+                {svc.description}
               </p>
               <p className="mt-3 text-sm font-bold text-orange-600">
-                {svc.price}
+                From ₹{svc.price}
               </p>
               <button
                 onClick={() => onBookService(activeTab, svc.name)}
@@ -121,5 +120,76 @@ function TabButton({
       </span>
       <span>{label}</span>
     </button>
+  );
+}
+
+function CategoryDropdown({
+  categories,
+  value,
+  onChange,
+}: {
+  categories: ServiceCategory[];
+  value: string;
+  onChange: (name: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const selected = categories.find((c) => c.name === value) ?? categories[0];
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node))
+        setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className={`flex w-full items-center justify-between rounded-2xl px-4 py-3.5 text-sm font-semibold transition ring-1 ${
+          open
+            ? "bg-white ring-brand-500 shadow-sm"
+            : "bg-white ring-slate-200 hover:ring-brand-300"
+        }`}
+      >
+        <span className="flex items-center gap-2.5">
+          <span className="text-xl leading-none">{selected?.icon}</span>
+          <span className="text-slate-800">{selected?.name}</span>
+        </span>
+        <ChevronDown
+          className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+
+      {open && (
+        <div className="absolute z-20 mt-1.5 w-full rounded-2xl bg-white shadow-lg ring-1 ring-slate-200 overflow-hidden">
+          {categories.map((cat) => (
+            <button
+              key={cat.id}
+              type="button"
+              onClick={() => {
+                onChange(cat.name);
+                setOpen(false);
+              }}
+              className={`flex w-full items-center gap-3 px-4 py-3.5 text-sm transition ${
+                cat.name === value
+                  ? "bg-brand-50 font-bold text-brand-700"
+                  : "text-slate-700 hover:bg-slate-50"
+              }`}
+            >
+              <span className="text-xl leading-none">{cat.icon}</span>
+              <span className="flex-1 text-left">{cat.name}</span>
+              <span className="text-xs text-slate-400">
+                {cat.sub_services.length} services
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

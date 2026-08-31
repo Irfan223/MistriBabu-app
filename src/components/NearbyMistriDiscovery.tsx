@@ -12,6 +12,7 @@ import {
   getServiceablePincode,
   type ServiceablePincode,
 } from "@/services/serviceablePincodeService";
+import { useConfig } from "@/context/AppConfigContext";
 
 type Radius = 10 | 20 | 50;
 
@@ -25,7 +26,7 @@ interface NearbyMistriDiscoveryProps {
   onBook?: (trade: string) => void;
 }
 
-const TRADE_ICONS: Record<string, React.ReactNode> = {
+const TRADE_ICON_MAP: Record<string, React.ReactNode> = {
   Electrician: <Zap className="h-5 w-5" />,
   Plumber: <Droplets className="h-5 w-5" />,
   Painter: <Paintbrush className="h-5 w-5" />,
@@ -54,6 +55,14 @@ function formatPincodeLocation(data: ServiceablePincode): string {
 export default function NearbyMistriDiscovery({
   onBook,
 }: NearbyMistriDiscoveryProps) {
+  const { categories } = useConfig();
+  // Build icon map from DB categories, fall back to static map for unknown trades
+  const TRADE_ICONS: Record<string, React.ReactNode> = Object.fromEntries(
+    categories.map((c) => [
+      c.name,
+      TRADE_ICON_MAP[c.name] ?? <span className="text-lg">{c.icon}</span>,
+    ]),
+  );
   const [pincode, setPincode] = useState("");
   const [pincodeData, setPincodeData] = useState<ServiceablePincode | null>(
     null,
