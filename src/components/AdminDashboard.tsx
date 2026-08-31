@@ -429,7 +429,7 @@ export default function AdminDashboard({ email, onBack }: AdminDashboardProps) {
           />
         </div>
 
-        <div className="flex gap-2 mb-5">
+        <div className="flex flex-wrap gap-2 mb-5">
           <TabBtn
             active={tab === "bookings"}
             onClick={() => setTab("bookings")}
@@ -498,7 +498,7 @@ export default function AdminDashboard({ email, onBack }: AdminDashboardProps) {
                 slots: "Time Slots",
               };
               return (
-                <div className="flex gap-2 overflow-x-auto no-scrollbar">
+                <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
                   {(["config", "services", "badges", "slots"] as const).map(
                     (st) => (
                       <button
@@ -718,8 +718,26 @@ function BookingCard({
     value: boolean,
   ) => void;
 }) {
-  const { timeSlots } = useConfig();
+  const { timeSlots, config } = useConfig();
   const timeSlotLabels = timeSlots.map((s) => s.label);
+
+  const buildNotifyUrl = () => {
+    const phone = `91${booking.customer_phone}`;
+    let msg = "";
+    if (booking.status === "ASSIGNED") {
+      const tech = technicians.find(
+        (t) => t.id === booking.assigned_technician_id,
+      );
+      msg = `नमस्ते ${booking.customer_name}! 🙏\n\nआपकी बुकिंग *${booking.booking_number}* के लिए हमारे ${booking.service_category} एक्सपर्ट${tech ? ` *${tech.name}*` : ""} जल्द आएंगे।\n\n📅 समय: ${booking.preferred_slot}\n📍 पता: ${booking.locality}\n\nकोई सवाल हो तो: ${config.support_phone}\n\n— ${config.brand_display_name} टीम`;
+    } else if (booking.status === "COMPLETED") {
+      msg = `नमस्ते ${booking.customer_name}! 🙏\n\nआपकी बुकिंग *${booking.booking_number}* पूरी हो गई है। ✅\n\n${config.brand_display_name} चुनने के लिए धन्यवाद!\n\nकोई परेशानी हो तो हमें बताएं: ${config.support_phone}`;
+    } else if (booking.status === "CANCELLED") {
+      msg = `नमस्ते ${booking.customer_name},\n\nआपकी बुकिंग *${booking.booking_number}* रद्द हो गई है। 😔\n\nदोबारा बुकिंग के लिए हमसे संपर्क करें:\n📞 ${config.support_phone}\n💬 wa.me/${config.whatsapp_number}\n\n— ${config.brand_display_name} टीम`;
+    } else {
+      msg = `नमस्ते ${booking.customer_name}! 🙏\n\nआपकी बुकिंग *${booking.booking_number}* मिल गई है। हम जल्द ही संपर्क करेंगे।\n\n— ${config.brand_display_name} टीम`;
+    }
+    return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+  };
   const [editingSlot, setEditingSlot] = useState(false);
   const [editDate, setEditDate] = useState("");
   const [editTime, setEditTime] = useState("");
@@ -815,14 +833,26 @@ function BookingCard({
             </p>
           )}
         </div>
-        <button
-          onClick={startEditSlot}
-          disabled={updating}
-          className="flex shrink-0 items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1.5 text-[11px] font-bold text-slate-600 transition hover:bg-slate-200 disabled:opacity-50"
-        >
-          <Pencil className="h-3 w-3" />
-          Edit Slot
-        </button>
+        <div className="flex shrink-0 items-center gap-1.5">
+          <a
+            href={buildNotifyUrl()}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 rounded-lg bg-green-500 px-2.5 py-1.5 text-[11px] font-bold text-white transition hover:bg-green-600"
+            title="Send WhatsApp notification to customer"
+          >
+            <MessageCircle className="h-3 w-3" />
+            Notify
+          </a>
+          <button
+            onClick={startEditSlot}
+            disabled={updating}
+            className="flex shrink-0 items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1.5 text-[11px] font-bold text-slate-600 transition hover:bg-slate-200 disabled:opacity-50"
+          >
+            <Pencil className="h-3 w-3" />
+            Edit Slot
+          </button>
+        </div>
       </div>
 
       {editingSlot && (
