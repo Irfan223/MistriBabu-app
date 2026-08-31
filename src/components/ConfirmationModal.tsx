@@ -1,5 +1,5 @@
 import { CheckCircle2, X, Phone, MessageCircle } from "lucide-react";
-import { BRAND } from "@/constants/brand";
+import { useConfig } from "@/context/AppConfigContext";
 
 interface ConfirmationModalProps {
   open: boolean;
@@ -12,10 +12,11 @@ export default function ConfirmationModal({
   bookingId,
   onClose,
 }: ConfirmationModalProps) {
+  const { config } = useConfig();
   if (!open) return null;
 
-  const waLink = `https://wa.me/${BRAND.whatsappNumber}?text=${encodeURIComponent(
-    `Hi ${BRAND.displayName}! I just booked a service. My Booking ID is ${bookingId}.`
+  const waLink = `https://wa.me/${config.whatsapp_number}?text=${encodeURIComponent(
+    `Hi ${config.brand_display_name}! I just booked a service. My Booking ID is ${bookingId}.`,
   )}`;
 
   return (
@@ -50,12 +51,13 @@ export default function ConfirmationModal({
         </div>
 
         <p className="mt-3 text-xs text-slate-500">
-          {BRAND.inspectionFee} visit charge applies. Final amount after inspection.
+          ₹{config.inspection_fee} visit charge applies. Final amount after
+          inspection.
         </p>
 
         <div className="mt-5 flex gap-3">
           <a
-            href={`tel:${BRAND.callingNumber}`}
+            href={`tel:${config.calling_number}`}
             className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-brand-600 py-3 text-sm font-semibold text-white transition hover:bg-brand-500"
           >
             <Phone className="h-4 w-4" />

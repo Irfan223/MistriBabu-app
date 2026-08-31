@@ -14,7 +14,7 @@ import {
   UserCircle,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { BRAND } from "@/constants/brand";
+import { useConfig } from "@/context/AppConfigContext";
 import { useToast } from "@/hooks/useToast";
 import Toast from "@/components/Toast";
 
@@ -47,7 +47,11 @@ const STATUS_STYLE: Record<string, string> = {
   CANCELLED: "bg-red-100 text-red-800",
 };
 
-function buildWhatsAppReceipt(b: Booking): string {
+function buildWhatsAppReceipt(
+  b: Booking,
+  displayName: string,
+  whatsappNumber: string,
+): string {
   const remaining =
     b.final_service_charge != null
       ? Math.max(0, b.final_service_charge - b.visiting_charge)
@@ -64,17 +68,18 @@ function buildWhatsAppReceipt(b: Booking): string {
       : null,
     remaining != null ? `Balance paid: ₹${remaining}` : null,
     ``,
-    `Thank you for choosing ${BRAND.displayName}! 🙏`,
+    `Thank you for choosing ${displayName}! 🙏`,
   ]
     .filter((l) => l !== null)
     .join("\n");
-  return `https://wa.me/${BRAND.whatsappNumber}?text=${encodeURIComponent(lines)}`;
+  return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(lines)}`;
 }
 
 export default function CustomerOrdersView({
   phone,
   onLogout,
 }: CustomerOrdersViewProps) {
+  const { config } = useConfig();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -176,7 +181,7 @@ export default function CustomerOrdersView({
             </div>
             <div>
               <p className="text-sm font-bold text-slate-900">
-                {BRAND.displayName}
+                {config.brand_display_name}
               </p>
               <p className="text-[10px] text-slate-400">
                 My Orders · +91 {phone}
@@ -251,7 +256,11 @@ export default function CustomerOrdersView({
                   </div>
                   {isCompleted && (
                     <a
-                      href={buildWhatsAppReceipt(b)}
+                      href={buildWhatsAppReceipt(
+                        b,
+                        config.brand_display_name,
+                        config.whatsapp_number,
+                      )}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex shrink-0 items-center gap-1.5 rounded-lg bg-green-600 px-2.5 py-1.5 text-xs font-bold text-white hover:bg-green-500"

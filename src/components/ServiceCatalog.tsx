@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { ArrowRight } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { ArrowRight, ChevronDown } from "lucide-react";
 import { useConfig } from "@/context/AppConfigContext";
 import type { ServiceCategory } from "@/hooks/useAppConfig";
 
@@ -33,19 +33,31 @@ export default function ServiceCatalog({ onBookService }: ServiceCatalogProps) {
           </p>
         </div>
 
-        <div className="mt-8 flex justify-center">
-          <div className="inline-flex max-w-full items-center gap-1.5 rounded-2xl bg-[#E7ECF3] p-1.5 overflow-x-auto no-scrollbar shadow-inner">
-            {categories.map((cat) => (
-              <TabButton
-                key={cat.id}
-                active={activeTab === cat.name}
-                onClick={() => setActiveTab(cat.name)}
-                icon={
-                  <span className="text-base leading-none">{cat.icon}</span>
-                }
-                label={cat.name === "AC Technician" ? "AC" : cat.name}
-              />
-            ))}
+        {/* Mobile: custom styled dropdown. Desktop (sm+): tab pill bar */}
+        <div className="mt-8">
+          <div className="sm:hidden">
+            <CategoryDropdown
+              categories={categories}
+              value={activeTab}
+              onChange={setActiveTab}
+            />
+          </div>
+
+          {/* Desktop tab pill bar — original centred inline design */}
+          <div className="hidden sm:flex justify-center">
+            <div className="inline-flex items-center gap-1.5 rounded-2xl bg-[#E7ECF3] p-1.5 shadow-inner">
+              {categories.map((cat) => (
+                <TabButton
+                  key={cat.id}
+                  active={activeTab === cat.name}
+                  onClick={() => setActiveTab(cat.name)}
+                  icon={
+                    <span className="text-base leading-none">{cat.icon}</span>
+                  }
+                  label={cat.name === "AC Technician" ? "AC" : cat.name}
+                />
+              ))}
+            </div>
           </div>
         </div>
 
@@ -108,5 +120,76 @@ function TabButton({
       </span>
       <span>{label}</span>
     </button>
+  );
+}
+
+function CategoryDropdown({
+  categories,
+  value,
+  onChange,
+}: {
+  categories: ServiceCategory[];
+  value: string;
+  onChange: (name: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const selected = categories.find((c) => c.name === value) ?? categories[0];
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node))
+        setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className={`flex w-full items-center justify-between rounded-2xl px-4 py-3.5 text-sm font-semibold transition ring-1 ${
+          open
+            ? "bg-white ring-brand-500 shadow-sm"
+            : "bg-white ring-slate-200 hover:ring-brand-300"
+        }`}
+      >
+        <span className="flex items-center gap-2.5">
+          <span className="text-xl leading-none">{selected?.icon}</span>
+          <span className="text-slate-800">{selected?.name}</span>
+        </span>
+        <ChevronDown
+          className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+
+      {open && (
+        <div className="absolute z-20 mt-1.5 w-full rounded-2xl bg-white shadow-lg ring-1 ring-slate-200 overflow-hidden">
+          {categories.map((cat) => (
+            <button
+              key={cat.id}
+              type="button"
+              onClick={() => {
+                onChange(cat.name);
+                setOpen(false);
+              }}
+              className={`flex w-full items-center gap-3 px-4 py-3.5 text-sm transition ${
+                cat.name === value
+                  ? "bg-brand-50 font-bold text-brand-700"
+                  : "text-slate-700 hover:bg-slate-50"
+              }`}
+            >
+              <span className="text-xl leading-none">{cat.icon}</span>
+              <span className="flex-1 text-left">{cat.name}</span>
+              <span className="text-xs text-slate-400">
+                {cat.sub_services.length} services
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
