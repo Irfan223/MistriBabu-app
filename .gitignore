@@ -13,6 +13,11 @@ dist-ssr
 
 .vscode/*
 !.vscode/extensions.json
+!.vscode/mcp.json
+
+# Supabase agent skills (installed by npx skills add)
+.agents/
+.claude/
 .idea
 .DS_Store
 *.suo
@@ -21,3 +26,5 @@ dist-ssr
 *.sln
 *.sw?
 .env
+
+skills-lock.json

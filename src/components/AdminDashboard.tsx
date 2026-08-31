@@ -27,16 +27,14 @@ import {
   MessageCircle,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { BRAND } from "@/constants/brand";
+import { useConfig } from "@/context/AppConfigContext";
 import { useToast } from "@/hooks/useToast";
 import Toast from "@/components/Toast";
 import AdminPincodeManager from "@/components/AdminPincodeManager";
-const SUPPORTED_DISTRICTS = [
-  "Muzaffarpur",
-  "Sitamarhi",
-  "Sheohar",
-  "Motihari",
-] as const;
+import AppConfigEditor from "@/components/admin/AppConfigEditor";
+import ServiceCategoriesManager from "@/components/admin/ServiceCategoriesManager";
+import TrustBadgesManager from "@/components/admin/TrustBadgesManager";
+import TimeSlotsManager from "@/components/admin/TimeSlotsManager";
 
 interface AdminDashboardProps {
   email: string;
@@ -44,12 +42,7 @@ interface AdminDashboardProps {
 }
 
 type BookingStatus = "ALL" | "PENDING" | "ASSIGNED" | "COMPLETED" | "CANCELLED";
-type DistrictFilter =
-  | "All"
-  | "Muzaffarpur"
-  | "Sitamarhi"
-  | "Sheohar"
-  | "Motihari";
+type DistrictFilter = "All" | string;
 
 const STATUS_OPTIONS = [
   "PENDING",
@@ -58,13 +51,6 @@ const STATUS_OPTIONS = [
   "CANCELLED",
 ] as const;
 
-const TIME_RANGES = [
-  "09:00 AM - 12:00 PM (Morning)",
-  "12:00 PM - 03:00 PM (Afternoon)",
-  "03:00 PM - 06:00 PM (Evening)",
-  "06:00 PM - 09:00 PM (Night)",
-];
-
 const getTodayDateString = () => new Date().toISOString().split("T")[0];
 
 // Parses a preferred_slot string ("YYYY-MM-DD (Time Range)") back into parts,
@@ -72,7 +58,7 @@ const getTodayDateString = () => new Date().toISOString().split("T")[0];
 function parsePreferredSlot(slot: string): { date: string; time: string } {
   const match = slot.match(/^(\d{4}-\d{2}-\d{2})\s*\((.+)\)$/);
   if (match) return { date: match[1], time: match[2] };
-  return { date: getTodayDateString(), time: TIME_RANGES[0] };
+  return { date: getTodayDateString(), time: "09:00 AM - 12:00 PM (Morning)" };
 }
 
 interface Booking {
@@ -112,9 +98,24 @@ interface Technician {
 }
 
 export default function AdminDashboard({ email, onBack }: AdminDashboardProps) {
-  const [tab, setTab] = useState<"bookings" | "technicians" | "pincodes">(
-    "bookings",
-  );
+  const { config, categories, timeSlots } = useConfig();
+  const supportedDistricts = [
+    ...new Set(
+      categories.flatMap(() => [
+        "Muzaffarpur",
+        "Sitamarhi",
+        "Sheohar",
+        "Motihari",
+      ]),
+    ),
+  ].filter((_, i) => i < 4); // will be replaced by DB query once districts table exists
+  const timeSlotLabels = timeSlots.map((s) => s.label);
+  const [tab, setTab] = useState<
+    "bookings" | "technicians" | "pincodes" | "settings"
+  >("bookings");
+  const [settingsTab, setSettingsTab] = useState<
+    "config" | "services" | "badges" | "slots"
+  >("config");
   const [statusFilter, setStatusFilter] = useState<BookingStatus>("ALL");
   const [search, setSearch] = useState("");
   const [districtFilter, setDistrictFilter] = useState<DistrictFilter>("All");
@@ -380,7 +381,7 @@ export default function AdminDashboard({ email, onBack }: AdminDashboardProps) {
             </button>
             <div className="min-w-0">
               <h1 className="text-sm font-extrabold leading-tight text-slate-900 sm:text-lg">
-                {BRAND.displayName} Lead &amp; Partner Management
+                {config.brand_display_name} Lead &amp; Partner Management
               </h1>
               <p className="hidden text-xs text-slate-500 sm:block">
                 Secure operations console
@@ -447,20 +448,32 @@ export default function AdminDashboard({ email, onBack }: AdminDashboardProps) {
             icon={<MapPin className="h-4 w-4" />}
             label="Add Pincodes"
           />
+          <TabBtn
+            active={tab === "settings"}
+            onClick={() => setTab("settings")}
+            icon={<ShieldCheck className="h-4 w-4" />}
+            label="Site Settings"
+          />
         </div>
 
         <div className="mb-5 flex flex-wrap gap-2">
-          {(["All", ...SUPPORTED_DISTRICTS] as DistrictFilter[]).map(
-            (district) => (
-              <button
-                key={district}
-                onClick={() => setDistrictFilter(district)}
-                className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${districtFilter === district ? "bg-brand-600 text-white" : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"}`}
-              >
-                {district}
-              </button>
-            ),
-          )}
+          {(
+            [
+              "All",
+              "Muzaffarpur",
+              "Sitamarhi",
+              "Sheohar",
+              "Motihari",
+            ] as DistrictFilter[]
+          ).map((district) => (
+            <button
+              key={district}
+              onClick={() => setDistrictFilter(district)}
+              className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${districtFilter === district ? "bg-brand-600 text-white" : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"}`}
+            >
+              {district}
+            </button>
+          ))}
         </div>
 
         {error && (
@@ -475,6 +488,40 @@ export default function AdminDashboard({ email, onBack }: AdminDashboardProps) {
           </div>
         ) : tab === "pincodes" ? (
           <AdminPincodeManager />
+        ) : tab === "settings" ? (
+          <div className="space-y-5">
+            {(() => {
+              const SETTINGS_LABELS: Record<string, string> = {
+                config: "Config",
+                services: "Services",
+                badges: "Badges",
+                slots: "Time Slots",
+              };
+              return (
+                <div className="flex gap-2 overflow-x-auto no-scrollbar">
+                  {(["config", "services", "badges", "slots"] as const).map(
+                    (st) => (
+                      <button
+                        key={st}
+                        onClick={() => setSettingsTab(st)}
+                        className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                          settingsTab === st
+                            ? "bg-slate-900 text-white"
+                            : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
+                        }`}
+                      >
+                        {SETTINGS_LABELS[st]}
+                      </button>
+                    ),
+                  )}
+                </div>
+              );
+            })()}
+            {settingsTab === "config" && <AppConfigEditor />}
+            {settingsTab === "services" && <ServiceCategoriesManager />}
+            {settingsTab === "badges" && <TrustBadgesManager />}
+            {settingsTab === "slots" && <TimeSlotsManager />}
+          </div>
         ) : tab === "bookings" ? (
           <>
             <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -671,6 +718,8 @@ function BookingCard({
     value: boolean,
   ) => void;
 }) {
+  const { timeSlots } = useConfig();
+  const timeSlotLabels = timeSlots.map((s) => s.label);
   const [editingSlot, setEditingSlot] = useState(false);
   const [editDate, setEditDate] = useState("");
   const [editTime, setEditTime] = useState("");
@@ -797,7 +846,7 @@ function BookingCard({
               Select Time Range
             </label>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              {TIME_RANGES.map((slot) => {
+              {timeSlotLabels.map((slot) => {
                 const isSelected = editTime === slot;
                 return (
                   <button

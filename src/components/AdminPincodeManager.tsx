@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import {
   lookupPincodeFromIndiaPost,
@@ -6,16 +6,38 @@ import {
   type ServiceablePincode,
   type SupportedDistrict,
 } from "@/services/serviceablePincodeService";
+import { supabase } from "@/lib/supabase";
 
-const DISTRICTS: SupportedDistrict[] = ["Muzaffarpur", "Sitamarhi", "Sheohar", "Motihari"];
+const DISTRICTS_FALLBACK: SupportedDistrict[] = [
+  "Muzaffarpur",
+  "Sitamarhi",
+  "Sheohar",
+  "Motihari",
+];
 
 export default function AdminPincodeManager() {
+  const [districts, setDistricts] = useState<string[]>(DISTRICTS_FALLBACK);
   const [pincode, setPincode] = useState("");
   const [fetching, setFetching] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [form, setForm] = useState<ServiceablePincode | null>(null);
+
+  // Derive district list from existing serviceable_pincodes table
+  useEffect(() => {
+    supabase
+      .from("serviceable_pincodes")
+      .select("district")
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          const unique = [
+            ...new Set(data.map((r: { district: string }) => r.district)),
+          ].sort();
+          setDistricts(unique);
+        }
+      });
+  }, []);
 
   const fetchPincode = async () => {
     setError(null);
@@ -30,7 +52,9 @@ export default function AdminPincodeManager() {
     try {
       const result = await lookupPincodeFromIndiaPost(pincode);
       if (!result.district) {
-        setError("This pincode is outside Muzaffarpur, Sitamarhi, Sheohar, or Motihari, or was not found.");
+        setError(
+          "This pincode is outside Muzaffarpur, Sitamarhi, Sheohar, or Motihari, or was not found.",
+        );
         return;
       }
       setForm({
@@ -42,7 +66,9 @@ export default function AdminPincodeManager() {
         longitude: result.longitude ?? 0,
       });
       if (result.coordinatesMissing) {
-        setError("Coordinates could not be auto-detected. Enter latitude and longitude manually below.");
+        setError(
+          "Coordinates could not be auto-detected. Enter latitude and longitude manually below.",
+        );
       }
     } catch {
       setError("Could not fetch pincode details. Please try again.");
@@ -73,15 +99,20 @@ export default function AdminPincodeManager() {
 
   return (
     <div className="rounded-xl bg-white p-4 ring-1 ring-slate-200">
-      <h3 className="text-sm font-bold text-slate-900">Add / Update Serviceable Pincode</h3>
+      <h3 className="text-sm font-bold text-slate-900">
+        Add / Update Serviceable Pincode
+      </h3>
       <p className="mt-1 text-xs text-slate-500">
-        District, block, and area names are auto-fetched from India Post; coordinates from OpenStreetMap.
+        District, block, and area names are auto-fetched from India Post;
+        coordinates from OpenStreetMap.
       </p>
 
       <div className="mt-3 flex gap-2">
         <input
           value={pincode}
-          onChange={(event) => setPincode(event.target.value.replace(/\D/g, ""))}
+          onChange={(event) =>
+            setPincode(event.target.value.replace(/\D/g, ""))
+          }
           maxLength={6}
           placeholder="6-digit pincode"
           className="form-input"
@@ -97,8 +128,12 @@ export default function AdminPincodeManager() {
         </button>
       </div>
 
-      {error && <p className="mt-2 text-xs font-semibold text-red-600">{error}</p>}
-      {success && <p className="mt-2 text-xs font-semibold text-emerald-600">{success}</p>}
+      {error && (
+        <p className="mt-2 text-xs font-semibold text-red-600">{error}</p>
+      )}
+      {success && (
+        <p className="mt-2 text-xs font-semibold text-emerald-600">{success}</p>
+      )}
 
       {form && (
         <div className="mt-4 space-y-3 border-t border-slate-100 pt-4">
@@ -106,10 +141,15 @@ export default function AdminPincodeManager() {
             District
             <select
               value={form.district}
-              onChange={(event) => setForm({ ...form, district: event.target.value as SupportedDistrict })}
+              onChange={(event) =>
+                setForm({
+                  ...form,
+                  district: event.target.value as SupportedDistrict,
+                })
+              }
               className="form-input mt-1"
             >
-              {DISTRICTS.map((district) => (
+              {districts.map((district) => (
                 <option key={district}>{district}</option>
               ))}
             </select>
@@ -119,7 +159,9 @@ export default function AdminPincodeManager() {
             Block
             <input
               value={form.block ?? ""}
-              onChange={(event) => setForm({ ...form, block: event.target.value })}
+              onChange={(event) =>
+                setForm({ ...form, block: event.target.value })
+              }
               className="form-input mt-1"
             />
           </label>
@@ -131,7 +173,10 @@ export default function AdminPincodeManager() {
               onChange={(event) =>
                 setForm({
                   ...form,
-                  areaNames: event.target.value.split(",").map((value) => value.trim()).filter(Boolean),
+                  areaNames: event.target.value
+                    .split(",")
+                    .map((value) => value.trim())
+                    .filter(Boolean),
                 })
               }
               className="form-input mt-1"
@@ -145,7 +190,9 @@ export default function AdminPincodeManager() {
                 type="number"
                 step="any"
                 value={form.latitude || ""}
-                onChange={(event) => setForm({ ...form, latitude: Number(event.target.value) })}
+                onChange={(event) =>
+                  setForm({ ...form, latitude: Number(event.target.value) })
+                }
                 className="form-input mt-1"
               />
             </label>
@@ -155,7 +202,9 @@ export default function AdminPincodeManager() {
                 type="number"
                 step="any"
                 value={form.longitude || ""}
-                onChange={(event) => setForm({ ...form, longitude: Number(event.target.value) })}
+                onChange={(event) =>
+                  setForm({ ...form, longitude: Number(event.target.value) })
+                }
                 className="form-input mt-1"
               />
             </label>

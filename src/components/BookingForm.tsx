@@ -6,14 +6,9 @@ import {
   Phone,
   User,
   MapPin,
-  Zap,
-  Droplets,
-  AirVent,
-  Paintbrush,
   AlertCircle,
   Clock,
 } from "lucide-react";
-import { BRAND } from "@/constants/brand";
 import {
   checkServiceAvailability,
   type ServiceAvailability,
@@ -22,6 +17,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/useToast";
 import Toast from "@/components/Toast";
+import { useConfig } from "@/context/AppConfigContext";
 
 interface BookingFormProps {
   prefillCategory: string;
@@ -43,14 +39,6 @@ interface FormState {
   specific_time_range: string;
 }
 
-const TIME_RANGES = [
-  "09:00 AM - 12:00 PM (Morning)",
-  "12:00 PM - 03:00 PM (Afternoon)",
-  "03:00 PM - 06:00 PM (Evening)",
-  "06:00 PM - 09:00 PM (Night)",
-];
-
-// Helper for min date calculation (YYYY-MM-DD)
 const getTodayDateString = () => new Date().toISOString().split("T")[0];
 const getTomorrowDateString = () => {
   const d = new Date();
@@ -58,22 +46,25 @@ const getTomorrowDateString = () => {
   return d.toISOString().split("T")[0];
 };
 
-const emptyForm: FormState = {
-  customer_name: "",
-  customer_phone: "",
-  address: "",
-  pincode: "",
-  locality: "",
-  service_category: "Electrician",
-  sub_service: "",
-  problem_description: "",
-  slot_type: "Today",
-  specific_date: getTodayDateString(),
-  specific_time_range: TIME_RANGES[0],
-};
-
 const BookingForm = forwardRef<HTMLDivElement, BookingFormProps>(
   ({ prefillCategory, prefillSubService, onSubmitSuccess }, ref) => {
+    const { config, categories, timeSlots } = useConfig();
+    const timeSlotLabels = timeSlots.map((s) => s.label);
+
+    const emptyForm: FormState = {
+      customer_name: "",
+      customer_phone: "",
+      address: "",
+      pincode: "",
+      locality: "",
+      service_category: categories[0]?.name ?? "Electrician",
+      sub_service: "",
+      problem_description: "",
+      slot_type: "Today",
+      specific_date: getTodayDateString(),
+      specific_time_range: timeSlotLabels[0] ?? "",
+    };
+
     const [form, setForm] = useState<FormState>(emptyForm);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [helpers, setHelpers] = useState<Record<string, string>>({});
@@ -387,7 +378,7 @@ const BookingForm = forwardRef<HTMLDivElement, BookingFormProps>(
                   {!availability.canBook && `❌ ${availability.message}`}
                   {!availability.canBook && (
                     <a
-                      href={`tel:${BRAND.callingNumber}`}
+                      href={`tel:${config.calling_number}`}
                       className="ml-2 inline-block underline"
                     >
                       Call Dispatch
@@ -400,36 +391,19 @@ const BookingForm = forwardRef<HTMLDivElement, BookingFormProps>(
             <div className="grid grid-cols-1 gap-4">
               <Field label="Service Category" error={errors.service_category}>
                 <div className="grid grid-cols-2 gap-1 rounded-xl bg-slate-200 p-1 sm:grid-cols-4">
-                  <CategoryPill
-                    active={form.service_category === "Electrician"}
-                    onClick={() =>
-                      handleChange("service_category", "Electrician")
-                    }
-                    icon={<Zap className="h-4 w-4" />}
-                    label="Electrician"
-                  />
-                  <CategoryPill
-                    active={form.service_category === "Plumber"}
-                    onClick={() => handleChange("service_category", "Plumber")}
-                    icon={<Droplets className="h-4 w-4" />}
-                    label="Plumber"
-                  />
-                  <CategoryPill
-                    active={form.service_category === "AC Technician"}
-                    onClick={() =>
-                      handleChange("service_category", "AC Technician")
-                    }
-                    icon={<AirVent className="h-4 w-4" />}
-                    label="AC"
-                  />
-                  <CategoryPill
-                    active={form.service_category === "Carpenter"}
-                    onClick={() =>
-                      handleChange("service_category", "Carpenter")
-                    }
-                    icon={<Paintbrush className="h-4 w-4" />}
-                    label="Carpenter"
-                  />
+                  {categories.map((cat) => (
+                    <CategoryPill
+                      key={cat.id}
+                      active={form.service_category === cat.name}
+                      onClick={() => handleChange("service_category", cat.name)}
+                      icon={
+                        <span className="text-base leading-none">
+                          {cat.icon}
+                        </span>
+                      }
+                      label={cat.name === "AC Technician" ? "AC" : cat.name}
+                    />
+                  ))}
                 </div>
               </Field>
 
@@ -483,7 +457,7 @@ const BookingForm = forwardRef<HTMLDivElement, BookingFormProps>(
                   error={errors.specific_time_range}
                 >
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                    {TIME_RANGES.map((slot) => {
+                    {timeSlotLabels.map((slot) => {
                       const isSelected = form.specific_time_range === slot;
                       return (
                         <button
@@ -553,8 +527,8 @@ const BookingForm = forwardRef<HTMLDivElement, BookingFormProps>(
               )}
             </button>
             <p className="text-center text-xs text-slate-400">
-              {BRAND.inspectionFee} visit charge applies. You'll be redirected
-              to WhatsApp to confirm.
+              ₹{config.inspection_fee} visit charge applies. You'll be
+              redirected to WhatsApp to confirm.
             </p>
           </form>
         </div>

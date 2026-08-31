@@ -1,0 +1,19 @@
+{
+  "inputs": [
+    {
+      "id": "supabase-token",
+      "type": "promptString",
+      "description": "Supabase Personal Access Token",
+      "password": true
+    }
+  ],
+  "servers": {
+    "supabase": {
+      "type": "http",
+      "url": "https://mcp.supabase.com/mcp?project_ref=hlyeifpbtlumuihmtlqf&features=docs%2Caccount%2Cdatabase%2Cdebugging%2Cdevelopment%2Cfunctions%2Cbranching",
+      "headers": {
+        "Authorization": "Bearer ${input:supabase-token}"
+      }
+    }
+  }
+}

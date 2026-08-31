@@ -5,6 +5,7 @@ import {
   getServiceablePincode,
   type ServiceablePincode,
 } from "@/services/serviceablePincodeService";
+import { useConfig } from "@/context/AppConfigContext";
 
 interface TechnicianRegistrationFormProps {
   open?: boolean;
@@ -12,13 +13,23 @@ interface TechnicianRegistrationFormProps {
   onLoginClick?: () => void;
 }
 
-const TRADES = ["Electrician", "Plumber", "AC Technician", "Painter"] as const;
+const TRADES_FALLBACK = [
+  "Electrician",
+  "Plumber",
+  "AC Technician",
+  "Painter",
+] as const;
 
 export default function TechnicianRegistrationForm({
   open = true,
   onClose,
   onLoginClick,
 }: TechnicianRegistrationFormProps) {
+  const { categories } = useConfig();
+  const TRADES =
+    categories.length > 0
+      ? categories.map((c) => c.name)
+      : [...TRADES_FALLBACK];
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [experience, setExperience] = useState("");
